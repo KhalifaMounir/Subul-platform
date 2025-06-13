@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>سبل - منصة التعلم الإلكتروني</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   </head>
   <body>
     <div id="app">
@@ -310,10 +310,11 @@
       </main>
     </div>
 
-    <script src="static/js/data.js"></script>
-    <script src="static/js/quiz.js"></script>
-    <script src="static/js/search.js"></script>
-    <script src="static/js/certificate.js"></script>
-    <script src="static/js/main.js"></script>
+<script src="{{ url_for('static', filename='js/data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+<script src="{{ url_for('static', filename='js/certificate.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
   </body>
 </html>
