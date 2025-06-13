@@ -1,0 +1,182 @@
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modalContent {
+  background: var(--white);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow);
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+}
+
+.loginContent {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  animation: slideIn 0.5s ease-out;
+}
+
+.loginBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(99, 102, 241, 0.2));
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.loginBackground::before {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="10" cy="10" r="2" fill="%234f46e5"/%3E%3Ccircle cx="30" cy="30" r="3" fill="%236366f1"/%3E%3Ccircle cx="70" cy="20" r="2" fill="%234f46e5"/%3E%3Ccircle cx="50" cy="80" r="4" fill="%236366f1"/%3E%3C/svg%3E');
+  background-size: 50px;
+  animation: float 20s linear infinite;
+  opacity: 0.1;
+}
+
+.loginHeader {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 2rem 1.5rem 1rem;
+  background: var(--white);
+}
+
+.loginHeader h2 {
+  font-size: 1.75rem;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.loginHeader p {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--gray-600);
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  color: var(--gray-900);
+}
+
+.loginBody {
+  position: relative;
+  z-index: 1;
+  padding: 1.5rem;
+  background: var(--white);
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.inputWrapper i {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  border: 2px solid var(--gray-200);
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.3s;
+  background: var(--gray-50);
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.loginBtn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  color: var(--white);
+  border: none;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.loginBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.demoCredentials {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.demoCredentials p {
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 480px) {
+  .loginContent {
+    width: 95%;
+    margin: 1rem;
+  }
+
+  .loginHeader h2 {
+    font-size: 1.5rem;
+  }
+
+  .loginBody {
+    padding: 1rem;
+  }
+}
