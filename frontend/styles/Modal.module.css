@@ -1,0 +1,288 @@
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modalContent {
+  background: var(--white);
+  border-radius: 0.75rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.quizHeader, .resultsHeader, .certificateHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.quizHeader h2, .resultsHeader h2, .certificateHeader h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--gray-400);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.closeBtn:hover {
+  color: var(--gray-600);
+}
+
+.quizBody, .resultsBody, .certificateBody {
+  padding: 1.5rem;
+}
+
+.quizProgress {
+  margin-bottom: 2rem;
+}
+
+.quizProgressBar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: var(--gray-200);
+  border-radius: 0.25rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.quizProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  transition: width 0.3s ease;
+}
+
+.quizCounter {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.questionContainer {
+  margin-bottom: 2rem;
+}
+
+.questionText {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 1.5rem;
+}
+
+.optionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.option {
+  padding: 1rem;
+  border: 2px solid var(--gray-200);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--white);
+}
+
+.option:hover {
+  border-color: var(--primary);
+  background-color: #f8faff;
+}
+
+.option.selected {
+  border-color: var(--primary);
+  background-color: #eef2ff;
+}
+
+.quizActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.quizActions .btnSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resultsBody {
+  text-align: center;
+}
+
+.scoreDisplay {
+  margin-bottom: 2rem;
+}
+
+.scoreCircle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  color: var(--white);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.scoreMessage {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.passStatus {
+  font-size: 1rem;
+  color: var(--gray-600);
+}
+
+.resultsActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.certificateContent {
+  max-width: 800px;
+}
+
+.certificate {
+  background: var(--white);
+  margin: 2rem 0;
+}
+
+.certificateBorder {
+  border: 8px solid #fbbf24;
+  border-radius: 1rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+}
+
+.certificateInner {
+  text-align: center;
+  padding: 2rem;
+}
+
+.certificateLogo {
+  margin-bottom: 2rem;
+}
+
+.certificateLogo i {
+  font-size: 4rem;
+  color: #f59e0b;
+  margin-bottom: 1rem;
+}
+
+.certificateLogo h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+
+.certificate h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f59e0b;
+  margin-bottom: 1rem;
+}
+
+.certificateText {
+  font-size: 1.125rem;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.studentName, .courseName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 1rem 0;
+  border-bottom: 2px solid #f59e0b;
+  display: inline-block;
+  padding-bottom: 0.5rem;
+}
+
+.certificateDetails {
+  margin: 2rem 0;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.certificateDetails p {
+  font-size: 1rem;
+  color: var(--gray-600);
+}
+
+.certificateSignature {
+  margin-top: 3rem;
+}
+
+.signatureLine {
+  border-top: 2px solid var(--gray-400);
+  padding-top: 1rem;
+  margin: 0 auto;
+  width: 200px;
+}
+
+.signatureLine p {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.certificateActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .modalContent {
+    width: 95%;
+    margin: 1rem;
+  }
+
+  .quizActions, .resultsActions, .certificateActions {
+    flex-direction: column;
+  }
+
+  .certificateDetails {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .certificateBorder {
+    padding: 1rem;
+  }
+
+  .certificateInner {
+    padding: 1rem;
+  }
+}
