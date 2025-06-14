@@ -94,7 +94,15 @@ pip install -r requirements.txt
 
 ### 4. Create the `.env` File
 
+<<<<<<< Updated upstream
 ### 5. Database Setup: PostgreSQL & pgAdmin4 : Use pgAdmin4 to browse and manage your database visually
+=======
+
+
+
+
+### 4.2 Database Setup: PostgreSQL & pgAdmin4 : Use pgAdmin4 to browse and manage your database visually
+>>>>>>> Stashed changes
 flask db upgrade       # Apply migrations
 
 ### 6. Run the Application
