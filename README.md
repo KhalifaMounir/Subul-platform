@@ -32,10 +32,11 @@
 
 ## 📁 Project Structure
 
+```
 subul-platform/
 ├── backend/
 │   ├── app/
-│   │   ├── __init__.py          # Flask app factory and setup
+│   │   ├── _init_.py          # Flask app factory and setup
 │   │   ├── forms.py             # WTForms classes
 │   │   ├── generate.py          # (your custom module)
 │   │   ├── models.py            # Database models
@@ -63,7 +64,7 @@ subul-platform/
 ├── .gitignore                   # Git ignore file
 ├── LICENSE                     # Project license
 ├── README.md                   # Project documentation
-
+```
 
 > 🔹 Note: Empty folders are tracked using `.gitkeep` files.
 
@@ -93,13 +94,10 @@ pip install -r requirements.txt
 
 ### 4. Create the `.env` File
 
-
-
-
-
 ### 5. Database Setup: PostgreSQL & pgAdmin4 : Use pgAdmin4 to browse and manage your database visually
 flask db upgrade       # Apply migrations
-### 5. Run the Application
+
+### 6. Run the Application
 
 ```bash
 flask run
