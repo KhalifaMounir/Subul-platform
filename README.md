@@ -32,16 +32,38 @@
 
 ## 📁 Project Structure
 
-```
-subul/
-├── app.py               # Main application entry point
-├── models.py            # Database models
-├── README.md            # Project documentation
-├── /templates/          # HTML templates
-├── /static/             # Static files (CSS/JS)
-├── /assets/             # ThemeWagon assets
-├── /ai/                 # Future AI features
-```
+subul-platform/
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py          # Flask app factory and setup
+│   │   ├── forms.py             # WTForms classes
+│   │   ├── generate.py          # (your custom module)
+│   │   ├── models.py            # Database models
+│   │   ├── routes.py            # Flask routes / API endpoints
+│   │   ├── services.py          # Business logic / service layer
+│   │   ├── utils.py             # Utility/helper functions
+│   ├── migrations/              # Alembic migrations folder
+│   ├── uploads/                 # Uploaded files storage
+│   ├── .env                    # Environment variables
+│   ├── config.py                # Configuration settings
+│   ├── requirements.txt         # Python dependencies
+│   ├── run.py                   # Flask app entry point
+│
+├── frontend/
+│   ├── .next/                   # Next.js build artifacts
+│   ├── components/              # React components
+│   ├── pages/                   # Next.js pages (routes)
+│   ├── public/                  # Public assets (images, favicon)
+│   ├── styles/                  # CSS/SCSS stylesheets
+│   ├── utils/                   # JS utility functions
+│   ├── next.config.js           # Next.js config
+│   ├── package.json             # Node dependencies
+│   ├── package-lock.json        # Locked node modules
+│
+├── .gitignore                   # Git ignore file
+├── LICENSE                     # Project license
+├── README.md                   # Project documentation
+
 
 > 🔹 Note: Empty folders are tracked using `.gitkeep` files.
 
@@ -71,6 +93,12 @@ pip install -r requirements.txt
 
 ### 4. Create the `.env` File
 
+
+
+
+
+### 5. Database Setup: PostgreSQL & pgAdmin4 : Use pgAdmin4 to browse and manage your database visually
+flask db upgrade       # Apply migrations
 ### 5. Run the Application
 
 ```bash
