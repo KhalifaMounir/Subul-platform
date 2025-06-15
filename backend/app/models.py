@@ -7,6 +7,12 @@ user_certifications = db.Table('user_certifications',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('certification_id', db.Integer, db.ForeignKey('certification.id'), primary_key=True)
 )
+
+job_certifications = db.Table('job_certifications',
+    db.Column('job_id', db.Integer, db.ForeignKey('job.id'), primary_key=True),
+    db.Column('certification_id', db.Integer, db.ForeignKey('certification.id'), primary_key=True)
+)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -39,9 +45,15 @@ class Quiz(db.Model):
 
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id'))
     title = db.Column(db.String(128))
     description = db.Column(db.Text)
+
+    certifications = db.relationship(
+        'Certification',
+        secondary=job_certifications,
+        backref='jobs'
+    )
+
 
 class LabGuide(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -4,7 +4,7 @@ from app.models import User
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 from flask_login import current_user
-from app.models import User, Certification, Quiz, LabGuide, Video
+from app.models import Job, User, Certification, Quiz, LabGuide, Video
 from werkzeug.utils import secure_filename
 import os
 bp = Blueprint('routes', __name__)
@@ -44,6 +44,8 @@ def certifications():
         })
 
     return jsonify(result), 200
+
+
 @bp.route('/quiz/<int:cert_id>', methods=['GET'])
 @login_required
 def get_quiz(cert_id):
@@ -74,8 +76,6 @@ def get_video(cert_id):
     return jsonify([
         {'id': v.id, 'title': v.title, 'url': v.url} for v in videos
     ]), 200
-
-
 
 
 
@@ -126,23 +126,25 @@ def upload_lab_pdf(cert_id):
     return jsonify({'message': 'Invalid file type. Only PDF allowed'}), 400
 
 
+@bp.route('/jobs/<int:cert_id>', methods=['GET'])
+@login_required
+def get_jobs(cert_id):
+    cert = Certification.query.get(cert_id)
+    if not cert:
+        return jsonify({'message': 'Certification not found'}), 404
 
+    jobs = cert.jobs
 
+    if not jobs:
+        return jsonify({'message': 'No jobs found for this certification'}), 404
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return jsonify([
+        {
+            'id': job.id,
+            'title': job.title,
+            'description': job.description
+        } for job in jobs
+    ]), 200
 
 
 
