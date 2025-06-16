@@ -1,67 +1,26 @@
-from app import db, login_manager
+from . import db
 from flask_login import UserMixin
-from passlib.hash import scrypt
-from werkzeug.security import generate_password_hash, check_password_hash
-
-user_certifications = db.Table('user_certifications',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('certification_id', db.Integer, db.ForeignKey('certification.id'), primary_key=True)
-)
-
-job_certifications = db.Table('job_certifications',
-    db.Column('job_id', db.Integer, db.ForeignKey('job.id'), primary_key=True),
-    db.Column('certification_id', db.Integer, db.ForeignKey('certification.id'), primary_key=True)
-)
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    is_admin = db.Column(db.Boolean, default=False, nullable=False)
-    certifications = db.relationship('Certification', secondary=user_certifications, backref='users')
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)  
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)  
-
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
 
 class Certification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    quizzes = db.relationship('Quiz', backref='certification', lazy=True)
 
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id'))
-    question = db.Column(db.String(256))
-    options = db.Column(db.JSON)
-    answer = db.Column(db.String(128))
-    timestamp = db.Column(db.Float)
+    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id'), nullable=False)
+    question = db.Column(db.String(200), nullable=False)
+    options = db.Column(db.String(200), nullable=False)
+    correct_answer = db.Column(db.String(100), nullable=False)
+    timestamp = db.Column(db.Float, nullable=True)
 
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(128))
-    description = db.Column(db.Text)
-
-    certifications = db.relationship(
-        'Certification',
-        secondary=job_certifications,
-        backref='jobs'
-    )
-
-
-class LabGuide(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id'))
-    pdf_url = db.Column(db.String(256))  
-    
-class Video(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id'))
-    title = db.Column(db.String(128))
-    url = db.Column(db.String(256))
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(500), nullable=True)
+    url = db.Column(db.String(200), nullable=True)
