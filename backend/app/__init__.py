@@ -18,8 +18,10 @@ def create_app():
     migrate.init_app(app, db)
     
     from app.routes import bp
+    from app.admin_routes import admin_bp
     app.register_blueprint(bp)
-    
+    app.register_blueprint(admin_bp)
+
     with app.app_context():
         db.create_all()
     
