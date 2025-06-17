@@ -60,6 +60,68 @@ def get_quiz(cert_id):
     ]), 200
 
 
+#Submit Answer Route
+
+@bp.route('/quiz/<int:quiz_id>/answer', methods=['POST'])
+@login_required
+def submit_quiz_answer(quiz_id):
+    quiz = Quiz.query.get(quiz_id)
+    if not quiz:
+        return jsonify({'error': 'Quiz not found'}), 404
+
+    data = request.get_json()
+    selected = data.get('selected_option')
+
+    if not selected:
+        return jsonify({'error': 'Selected option required'}), 400
+
+    is_correct = selected.strip().lower() == quiz.answer.strip().lower()
+
+    # Optional: check if already answered
+    existing = UserQuizAnswer.query.filter_by(user_id=current_user.id, quiz_id=quiz_id).first()
+    if existing:
+        return jsonify({'message': 'Already answered this question'}), 400
+
+    answer = UserQuizAnswer(
+        user_id=current_user.id,
+        quiz_id=quiz_id,
+        selected_option=selected,
+        is_correct=is_correct
+    )
+    db.session.add(answer)
+    db.session.commit()
+
+    return jsonify({
+        'quiz_id': quiz.id,
+        'selected': selected,
+        'correct_answer': quiz.answer,
+        'is_correct': is_correct
+    }), 200
+
+#Route to Get Quiz Results for a User
+
+@bp.route('/quiz/results/<int:cert_id>', methods=['GET'])
+@login_required
+def get_quiz_results(cert_id):
+    quizzes = Quiz.query.filter_by(cert_id=cert_id).all()
+    results = []
+
+    for quiz in quizzes:
+        answer = UserQuizAnswer.query.filter_by(user_id=current_user.id, quiz_id=quiz.id).first()
+        results.append({
+            'quiz_id': quiz.id,
+            'question': quiz.question,
+            'selected': answer.selected_option if answer else None,
+            'correct': quiz.answer,
+            'is_correct': answer.is_correct if answer else None,
+            'timestamp': quiz.timestamp
+        })
+
+    return jsonify(results), 200
+
+
+
+
 @bp.route('/lab/<int:cert_id>', methods=['GET'])
 @login_required
 def get_lab_guide(cert_id):
@@ -76,55 +138,6 @@ def get_video(cert_id):
     return jsonify([
         {'id': v.id, 'title': v.title, 'url': v.url} for v in videos
     ]), 200
-
-
-
-@bp.route('/certifications', methods=['POST'])
-@login_required
-def add_certification():
-    data = request.get_json()
-    name = data.get('name')
-    if not name:
-        return jsonify({'error': 'Certification name required'}), 400
-
-    cert = Certification(name=name)
-    db.session.add(cert)
-    db.session.commit()
-    return jsonify({'id': cert.id, 'name': cert.name}), 201
-
-
-
-ALLOWED_EXTENSIONS = {'pdf'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@bp.route('/lab/<int:cert_id>', methods=['POST'])
-@login_required
-def upload_lab_pdf(cert_id):
-    if 'file' not in request.files:
-        return jsonify({'message': 'No file part'}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'message': 'No selected file'}), 400
-    
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        
-        lab_guide = LabGuide.query.filter_by(cert_id=cert_id).first()
-        if not lab_guide:
-            lab_guide = LabGuide(cert_id=cert_id)
-            db.session.add(lab_guide)
-        
-        lab_guide.pdf_url = file_path
-        db.session.commit()
-        
-        return jsonify({'message': 'File uploaded successfully', 'pdf_url': file_path}), 201
-    return jsonify({'message': 'Invalid file type. Only PDF allowed'}), 400
-
 
 @bp.route('/jobs/<int:cert_id>', methods=['GET'])
 @login_required
