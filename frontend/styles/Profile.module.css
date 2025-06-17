@@ -1,0 +1,112 @@
+.view {
+  min-height: calc(100vh - 80px);
+  padding: 2rem 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  padding: 2rem;
+  border-radius: 1rem;
+  color: var(--gray-900);
+}
+
+.profileAvatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  color: white;
+}
+
+.profileInfo h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--gray-900);
+}
+
+.profileInfo p {
+  font-size: 1rem;
+  color: var(--gray-600);
+}
+
+.achievementCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.achievementCard {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.achievementCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.achievementCard i {
+  font-size: 2.5rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+.achievementCard.locked i {
+  color: var(--gray-400);
+}
+
+.achievementCard h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--gray-800);
+}
+
+.achievementCard p {
+  color: var(--gray-600);
+  font-size: 0.95rem;
+}
+
+.certificatesSection {
+  background: var(--white);
+  border-radius: 1rem;
+  padding: 2.5rem;
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+}
+
+.certificatesSection h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: var(--gray-800);
+  text-align: center;
+}
+
+.certificatesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
