@@ -133,3 +133,55 @@ Main packages used:
 ```bash
 pip install -r requirements.txt
 ```
+
+## 📊 API Endpoints
+
+### 🔐 Authentication
+
+| Method | Endpoint | Description                 |
+| ------ | -------- | --------------------------- |
+| POST   | `/login` | User login with credentials |
+
+### 📅 Dashboard & Certifications
+
+| Method | Endpoint          | Description                                       |
+| ------ | ----------------- | ------------------------------------------------- |
+| GET    | `/dashboard`      | Authenticated dashboard                           |
+| GET    | `/certifications` | List certifications & user status (booked or not) |
+
+### 🔢 Quizzes (QCM)
+
+| Method | Endpoint                  | Description                                |
+| ------ | ------------------------- | ------------------------------------------ |
+| GET    | `/quiz/<cert_id>`         | Retrieve all questions for a certification |
+| POST   | `/quiz/<cert_id>`         | Add new question (admin only)              |
+| POST   | `/quiz/<quiz_id>/answer`  | Submit an answer to a quiz question        |
+| GET    | `/quiz/results/<cert_id>` | Get user's results for a certification     |
+
+### 📄 Lab Guides
+
+| Method | Endpoint         | Description                     |
+| ------ | ---------------- | ------------------------------- |
+| GET    | `/lab/<cert_id>` | Get pre-signed URL to PDF guide |
+
+### 🎥 Videos
+
+| Method | Endpoint           | Description                       |
+| ------ | ------------------ | --------------------------------- |
+| GET    | `/video/<cert_id>` | List all videos for certification |
+| POST   | `/video/<cert_id>` | Add a new video (title + URL)     |
+
+### 💼 Jobs
+
+| Method | Endpoint          | Description                                 |
+| ------ | ----------------- | ------------------------------------------- |
+| GET    | `/jobs/<cert_id>` | Get jobs requiring a specific certification |
+
+---
+
+## ⚖️ Quiz Logic (QCM)
+
+- Each quiz is tied to a certification and timestamped.
+- Questions are stored with options and the correct answer.
+- Users submit answers via POST and get feedback.
+- Scores and progress per certification are tracked.

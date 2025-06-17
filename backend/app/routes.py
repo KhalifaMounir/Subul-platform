@@ -60,6 +60,68 @@ def get_quiz(cert_id):
     ]), 200
 
 
+#Submit Answer Route
+
+@bp.route('/quiz/<int:quiz_id>/answer', methods=['POST'])
+@login_required
+def submit_quiz_answer(quiz_id):
+    quiz = Quiz.query.get(quiz_id)
+    if not quiz:
+        return jsonify({'error': 'Quiz not found'}), 404
+
+    data = request.get_json()
+    selected = data.get('selected_option')
+
+    if not selected:
+        return jsonify({'error': 'Selected option required'}), 400
+
+    is_correct = selected.strip().lower() == quiz.answer.strip().lower()
+
+    # Optional: check if already answered
+    existing = UserQuizAnswer.query.filter_by(user_id=current_user.id, quiz_id=quiz_id).first()
+    if existing:
+        return jsonify({'message': 'Already answered this question'}), 400
+
+    answer = UserQuizAnswer(
+        user_id=current_user.id,
+        quiz_id=quiz_id,
+        selected_option=selected,
+        is_correct=is_correct
+    )
+    db.session.add(answer)
+    db.session.commit()
+
+    return jsonify({
+        'quiz_id': quiz.id,
+        'selected': selected,
+        'correct_answer': quiz.answer,
+        'is_correct': is_correct
+    }), 200
+
+#Route to Get Quiz Results for a User
+
+@bp.route('/quiz/results/<int:cert_id>', methods=['GET'])
+@login_required
+def get_quiz_results(cert_id):
+    quizzes = Quiz.query.filter_by(cert_id=cert_id).all()
+    results = []
+
+    for quiz in quizzes:
+        answer = UserQuizAnswer.query.filter_by(user_id=current_user.id, quiz_id=quiz.id).first()
+        results.append({
+            'quiz_id': quiz.id,
+            'question': quiz.question,
+            'selected': answer.selected_option if answer else None,
+            'correct': quiz.answer,
+            'is_correct': answer.is_correct if answer else None,
+            'timestamp': quiz.timestamp
+        })
+
+    return jsonify(results), 200
+
+
+
+
 @bp.route('/lab/<int:cert_id>', methods=['GET'])
 @login_required
 def get_lab_guide(cert_id):
