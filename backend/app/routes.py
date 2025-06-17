@@ -77,55 +77,6 @@ def get_video(cert_id):
         {'id': v.id, 'title': v.title, 'url': v.url} for v in videos
     ]), 200
 
-
-
-@bp.route('/certifications', methods=['POST'])
-@login_required
-def add_certification():
-    data = request.get_json()
-    name = data.get('name')
-    if not name:
-        return jsonify({'error': 'Certification name required'}), 400
-
-    cert = Certification(name=name)
-    db.session.add(cert)
-    db.session.commit()
-    return jsonify({'id': cert.id, 'name': cert.name}), 201
-
-
-
-ALLOWED_EXTENSIONS = {'pdf'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@bp.route('/lab/<int:cert_id>', methods=['POST'])
-@login_required
-def upload_lab_pdf(cert_id):
-    if 'file' not in request.files:
-        return jsonify({'message': 'No file part'}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'message': 'No selected file'}), 400
-    
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        
-        lab_guide = LabGuide.query.filter_by(cert_id=cert_id).first()
-        if not lab_guide:
-            lab_guide = LabGuide(cert_id=cert_id)
-            db.session.add(lab_guide)
-        
-        lab_guide.pdf_url = file_path
-        db.session.commit()
-        
-        return jsonify({'message': 'File uploaded successfully', 'pdf_url': file_path}), 201
-    return jsonify({'message': 'Invalid file type. Only PDF allowed'}), 400
-
-
 @bp.route('/jobs/<int:cert_id>', methods=['GET'])
 @login_required
 def get_jobs(cert_id):

@@ -1,5 +1,6 @@
 import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
+from botocore.exceptions import ClientError
 import os
 
 def get_s3_client():
@@ -10,7 +11,14 @@ def get_s3_client():
           aws_session_token=os.getenv('AWS_SESSION_TOKEN'),
           region_name=os.getenv('AWS_DEFAULT_REGION')
       )
-
+def delete_s3_object(bucket_name, object_key):
+    s3_client = boto3.client('s3')
+    try:
+        s3_client.delete_object(Bucket=bucket_name, Key=object_key)
+        return True
+    except ClientError as e:
+        print(f"Error deleting S3 object {object_key}: {e}")
+        return False
 def generate_presigned_url(bucket_name, object_key, expiration=3600):
       """Generate a pre-signed URL for an S3 object with a default expiration of 1 hour."""
       s3_client = get_s3_client()
@@ -40,3 +48,5 @@ def upload_fileobj(file_obj, bucket_name, object_key):
       except ClientError as e:
           print(f"Error uploading file: {e}")
           return False
+
+

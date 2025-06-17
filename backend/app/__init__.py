@@ -1,21 +1,34 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from .config import Config
+from flask_migrate import Migrate
+from config import Config
+from flask_cors import CORS
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+login_manager.login_view = 'login'
+migrate = Migrate()
 
 def create_app():
-    app = Flask(__name__, template_folder='frontend/templates', static_folder='frontend/static')
+    app = Flask(__name__)
     app.config.from_object(Config)
+   # Configure CORS
+    #CORS(app, supports_credentials=True, origins=['http://localhost:3000'], 
+     #      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      #     allow_headers=['Content-Type', 'Accept'])
 
     db.init_app(app)
     login_manager.init_app(app)
-    login_manager.login_view = 'login'
-
-    from .routes import bp as main_bp
-    app.register_blueprint(main_bp)
+    migrate.init_app(app, db)
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+    
+    from app.routes import bp
+    from app.admin_routes import admin_bp
+    app.register_blueprint(bp)
+    app.register_blueprint(admin_bp)
 
     with app.app_context():
         db.create_all()
