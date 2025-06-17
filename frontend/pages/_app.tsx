@@ -8,9 +8,10 @@ export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()
   const isAdminRoute = router.pathname.startsWith('/admin')
   const isHomePage = router.pathname === '/'
+  const isCoursePage = router.pathname.startsWith('/course')
 
-  // Show header only if NOT in admin route AND NOT on home page
-  const showHeader = !isAdminRoute && !isHomePage
+  // Show header only if NOT in admin route, NOT on home page, and NOT on course page
+  const showHeader = !isAdminRoute && !isHomePage && !isCoursePage
 
   return (
     <>
