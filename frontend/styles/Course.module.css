@@ -1,4 +1,3 @@
-
 .view {
   min-height: calc(100vh - 80px);
   padding: 1rem 0;
@@ -15,11 +14,13 @@
 }
 
 .courseSidebar {
-  background: var(--white);
+  background: white;
   border-radius: 0.75rem;
   padding: 1.5rem;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .backBtn {
@@ -27,9 +28,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: var(--gray-100);
-  color: var(--primary);
-  border: 1px solid var(--primary);
+  background: #f3f4f6;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
   border-radius: 0.5rem;
   font-weight: 500;
   width: 100%;
@@ -39,21 +40,21 @@
 }
 
 .backBtn:hover {
-  background: var(--primary);
-  color: var(--white);
+  background: #3b82f6;
+  color: white;
 }
 
 .courseInfo h3 {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: var(--gray-800);
+  color: #1f2937;
 }
 
 .progressBar {
   width: 100%;
   height: 0.5rem;
-  background: var(--gray-200);
+  background: #e5e7eb;
   border-radius: 0.25rem;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -61,16 +62,137 @@
 
 .progressFill {
   height: 100%;
-  background: var(--primary);
+  background: #3b82f6;
   width: 0%;
   transition: width 0.3s ease;
 }
 
+.lessonsList {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.lessonItem {
+  margin-bottom: 1rem;
+  display: block;
+  clear: both; /* Clears any floats */
+}
+
+.lessonHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  cursor: pointer; /* Added: Indicate clickability */
+  transition: background-color 0.2s; /* Added: Smooth hover transition */
+}
+
+.lessonHeader:hover {
+  background: #e5e7eb; /* Added: Hover effect for lesson header */
+}
+
+.lessonHeader i {
+  color: #3b82f6;
+}
+
+.lessonHeader h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+  flex: 1; /* Added: Ensure title takes available space */
+}
+
+/* Added: Style for toggle icon (chevron) */
+.toggleIcon {
+  font-size: 0.875rem;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.toggleIcon.fa-chevron-down {
+  transform: rotate(0deg);
+}
+
+.toggleIcon.fa-chevron-right {
+  transform: rotate(0deg);
+}
+
+/* Modified: Add animation for subparts list */
+.lessonItem ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 1000px; /* Large enough to fit content */
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease; /* Smooth animation */
+  opacity: 1;
+}
+
+/* Added: Collapsed state for subparts list */
+.lessonItem ul[aria-hidden="true"] {
+  max-height: 0;
+  opacity: 0;
+}
+
+.subpartItem {
+  padding: 0.75rem;
+  margin-bottom: 0.25rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.subpartItem:hover {
+  background: #f3f4f6;
+}
+
+.subpartItem.active {
+  background: #dbeafe;
+  border-left: 3px solid #3b82f6;
+}
+
+.subpartContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.subpartContent i {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.subpartItem.active .subpartContent i {
+  color: #3b82f6;
+}
+
+.subpartInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.subpartTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.subpartDuration {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 .courseContent {
-  background: var(--white);
+  background: white;
   border-radius: 0.75rem;
   padding: 1.5rem;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -90,7 +212,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--white);
+  color: white;
   font-size: 1.125rem;
   text-align: center;
 }
@@ -101,15 +223,21 @@
   opacity: 0.7;
 }
 
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .lessonContent h2 {
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: var(--gray-900);
+  color: #111827;
 }
 
 .lessonContent p {
-  color: var(--gray-700);
+  color: #6b7280;
   line-height: 1.6;
   margin-bottom: 2rem;
 }
@@ -134,24 +262,24 @@
 }
 
 .btnPrimary {
-  background-color: var(--primary);
-  color: var(--white);
+  background-color: #3b82f6;
+  color: white;
   border: none;
 }
 
 .btnPrimary:hover {
-  background-color: var(--primary-dark);
+  background-color: #2563eb;
 }
 
 .btnSecondary {
-  background-color: var(--gray-100);
-  color: var(--primary);
-  border: 1px solid var(--primary);
+  background-color: #f3f4f6;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
 }
 
 .btnSecondary:hover {
-  background-color: var(--primary);
-  color: var(--white);
+  background-color: #3b82f6;
+  color: white;
 }
 
 /* Responsive */
@@ -162,7 +290,7 @@
   }
 
   .courseSidebar {
-    order: 1;
+    order: 1; /* Merged: Moved from redundant .courseSidebar block */
   }
 
   .courseContent {

@@ -3,9 +3,15 @@ import { quizActions } from '@/utils/actions'
 import styles from '@/styles/Modal.module.css'
 
 interface ResultsModalProps {
-  showView: (viewName: ViewType) => void
+  onClose: () => void;
+  onRetake: () => void;
+  onGetCertificate: (courseId: any) => void;
+  score: number;
+  courseId: string | string[];
+  showView: (view: ViewType | string) => void;
 }
-
+// ...other import
+// ...rest of ResultsModal component
 export default function ResultsModal({ showView }: ResultsModalProps) {
   return (
     <div className={styles.modal}>
