@@ -25,7 +25,9 @@
   box-shadow: var(--shadow-lg);
 }
 
-.quizHeader, .resultsHeader, .certificateHeader {
+.quizHeader,
+.resultsHeader,
+.certificateHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -33,7 +35,9 @@
   border-bottom: 1px solid var(--gray-200);
 }
 
-.quizHeader h2, .resultsHeader h2, .certificateHeader h2 {
+.quizHeader h2,
+.resultsHeader h2,
+.certificateHeader h2 {
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--gray-900);
@@ -52,7 +56,9 @@
   color: var(--gray-600);
 }
 
-.quizBody, .resultsBody, .certificateBody {
+.quizBody,
+.resultsBody,
+.certificateBody {
   padding: 1.5rem;
 }
 
@@ -75,63 +81,28 @@
   transition: width 0.3s ease;
 }
 
-.quizCounter {
-  font-size: 0.875rem;
-  color: var(--gray-600);
-}
-
 .questionContainer {
   margin-bottom: 2rem;
 }
 
-.questionText {
+.questionContainer h3 {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--gray-900);
   margin-bottom: 1.5rem;
 }
 
-.optionsContainer {
+.quizActions,
+.resultsActions,
+.certificateActions {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.option {
-  padding: 1rem;
-  border: 2px solid var(--gray-200);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: var(--white);
-}
-
-.option:hover {
-  border-color: var(--primary);
-  background-color: #f8faff;
-}
-
-.option.selected {
-  border-color: var(--primary);
-  background-color: #eef2ff;
-}
-
-.quizActions {
-  display: flex;
-  justify-content: space-between;
   gap: 1rem;
-}
-
-.quizActions .btnSecondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.resultsBody {
-  text-align: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .scoreDisplay {
+  text-align: center;
   margin-bottom: 2rem;
 }
 
@@ -147,29 +118,6 @@
   color: var(--white);
   font-size: 2rem;
   font-weight: 700;
-}
-
-.scoreMessage {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--gray-900);
-  margin-bottom: 0.5rem;
-}
-
-.passStatus {
-  font-size: 1rem;
-  color: var(--gray-600);
-}
-
-.resultsActions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.certificateContent {
-  max-width: 800px;
 }
 
 .certificate {
@@ -205,20 +153,14 @@
   color: var(--gray-900);
 }
 
-.certificate h2 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #f59e0b;
-  margin-bottom: 1rem;
-}
-
 .certificateText {
   font-size: 1.125rem;
   color: var(--gray-700);
   margin-bottom: 0.5rem;
 }
 
-.studentName, .courseName {
+.studentName,
+.courseName {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--gray-900);
@@ -257,25 +199,64 @@
   color: var(--gray-600);
 }
 
-.certificateActions {
+.btnPrimary,
+.btnSecondary,
+.btnSuccess {
   display: flex;
-  gap: 1rem;
-  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  font-size: 0.875rem;
 }
 
-@media (max-width: 480px) {
-  .modalContent {
-    width: 95%;
-    margin: 1rem;
-  }
+.btnPrimary {
+  background-color: var(--primary);
+  color: var(--white);
+}
 
-  .quizActions, .resultsActions, .certificateActions {
+.btnPrimary:hover {
+  background-color: var(--primary-dark);
+}
+
+.btnSecondary {
+  background-color: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.btnSecondary:hover {
+  background-color: var(--gray-300);
+}
+
+.btnSuccess {
+  background-color: var(--success);
+  color: var(--white);
+}
+
+.btnSuccess:hover {
+  background-color: #059669;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .quizActions,
+  .resultsActions,
+  .certificateActions {
     flex-direction: column;
   }
 
   .certificateDetails {
     flex-direction: column;
     text-align: center;
+  }
+
+  .modalContent {
+    width: 95%;
+    margin: 1rem;
   }
 
   .certificateBorder {
