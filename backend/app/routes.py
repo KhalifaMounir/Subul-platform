@@ -1,57 +1,210 @@
-from flask import render_template, redirect, url_for, request, Blueprint
-from flask_login import login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from . import db, login_manager
-from .models import User, Certification, Quiz, Job
-from .forms import LoginForm, RegisterForm
-from .services import get_user_by_email
-from .utils import format_response
+from flask import Blueprint, request, jsonify,current_app
+from app import db, login_manager
+from app.models import User
+from flask_login import login_user, logout_user, login_required
+from werkzeug.security import check_password_hash
+from flask_login import current_user
+from app.models import Job, User, Certification, Quiz, LabGuide, Video
+from werkzeug.utils import secure_filename
 import os
-import boto3
+bp = Blueprint('routes', __name__)
 
-bp = Blueprint('main', __name__)
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-@bp.route('/')
-def index():
-    return render_template('index.html')
-
-@bp.route('/register', methods=['GET', 'POST'])
-def register():
-    form = RegisterForm()
-    if form.validate_on_submit():
-        email = form.email.data
-        if get_user_by_email(email):
-            return format_response({"error": "User exists"}, 400)
-        password = generate_password_hash(form.password.data)
-        user = User(email=email, password=password)
-        db.session.add(user)
-        db.session.commit()
-        login_user(user)
-        return redirect(url_for('main.dashboard'))
-    return render_template('register.html', form=form)
-
-@bp.route('/login', methods=['GET', 'POST'])
+@bp.route('/login', methods=['POST'])
 def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        email = form.email.data
-        user = get_user_by_email(email)
-        if user and check_password_hash(user.password, form.password.data):
-            login_user(user)
-            return redirect(url_for('main.dashboard'))
-    return render_template('login.html', form=form)
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    user = User.query.filter_by(username=username).first()
+    if user and user.check_password(password):
+        login_user(user)
+        return jsonify({'message': 'Login successful', 'user_id': user.id}), 200
+    return jsonify({'message': 'Invalid credentials'}), 401
 
-@bp.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('main.index'))
 
-@bp.route('/dashboard')
+    
+
+@bp.route('/dashboard', methods=['GET'])
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    return jsonify({'message': 'Welcome to your dashboard'}), 200
+
+@bp.route('/certifications', methods=['GET'])
+@login_required
+def certifications():
+    all_certs = Certification.query.all()
+    user_cert_ids = {cert.id for cert in current_user.certifications}  
+
+    result = []
+    for cert in all_certs:
+        result.append({
+            'id': cert.id,
+            'name': cert.name,
+            'booked_by_user': cert.id in user_cert_ids  # True/False     if user booked it
+        })
+
+    return jsonify(result), 200
+
+
+@bp.route('/quiz/<int:cert_id>', methods=['GET'])
+@login_required
+def get_quiz(cert_id):
+    quiz_items = Quiz.query.filter_by(cert_id=cert_id).all()
+    return jsonify([
+        {
+            'id': q.id,
+            'question': q.question,
+            'options': q.options,
+            'answer': q.answer  
+        } for q in quiz_items
+    ]), 200
+
+
+#Submit Answer Route
+
+@bp.route('/quiz/<int:quiz_id>/answer', methods=['POST'])
+@login_required
+def submit_quiz_answer(quiz_id):
+    quiz = Quiz.query.get(quiz_id)
+    if not quiz:
+        return jsonify({'error': 'Quiz not found'}), 404
+
+    data = request.get_json()
+    selected = data.get('selected_option')
+
+    if not selected:
+        return jsonify({'error': 'Selected option required'}), 400
+
+    is_correct = selected.strip().lower() == quiz.answer.strip().lower()
+
+    # Optional: check if already answered
+    existing = UserQuizAnswer.query.filter_by(user_id=current_user.id, quiz_id=quiz_id).first()
+    if existing:
+        return jsonify({'message': 'Already answered this question'}), 400
+
+    answer = UserQuizAnswer(
+        user_id=current_user.id,
+        quiz_id=quiz_id,
+        selected_option=selected,
+        is_correct=is_correct
+    )
+    db.session.add(answer)
+    db.session.commit()
+
+    return jsonify({
+        'quiz_id': quiz.id,
+        'selected': selected,
+        'correct_answer': quiz.answer,
+        'is_correct': is_correct
+    }), 200
+
+#Route to Get Quiz Results for a User
+
+@bp.route('/quiz/results/<int:cert_id>', methods=['GET'])
+@login_required
+def get_quiz_results(cert_id):
+    quizzes = Quiz.query.filter_by(cert_id=cert_id).all()
+    results = []
+
+    for quiz in quizzes:
+        answer = UserQuizAnswer.query.filter_by(user_id=current_user.id, quiz_id=quiz.id).first()
+        results.append({
+            'quiz_id': quiz.id,
+            'question': quiz.question,
+            'selected': answer.selected_option if answer else None,
+            'correct': quiz.answer,
+            'is_correct': answer.is_correct if answer else None,
+            'timestamp': quiz.timestamp
+        })
+
+    return jsonify(results), 200
+
+
+
+
+@bp.route('/lab/<int:cert_id>', methods=['GET'])
+@login_required
+def get_lab_guide(cert_id):
+    guide = LabGuide.query.filter_by(cert_id=cert_id).first()
+    if guide:
+        return jsonify({'id': guide.id, 'pdf_url': guide.pdf_url}), 200
+    return jsonify({'message': 'Lab guide not found'}), 404
+
+
+@bp.route('/video/<int:cert_id>', methods=['GET'])
+@login_required
+def get_video(cert_id):
+    videos = Video.query.filter_by(cert_id=cert_id).all()
+    return jsonify([
+        {'id': v.id, 'title': v.title, 'url': v.url} for v in videos
+    ]), 200
+
+@bp.route('/jobs/<int:cert_id>', methods=['GET'])
+@login_required
+def get_jobs(cert_id):
+    cert = Certification.query.get(cert_id)
+    if not cert:
+        return jsonify({'message': 'Certification not found'}), 404
+
+    jobs = cert.jobs
+
+    if not jobs:
+        return jsonify({'message': 'No jobs found for this certification'}), 404
+
+    return jsonify([
+        {
+            'id': job.id,
+            'title': job.title,
+            'description': job.description
+        } for job in jobs
+    ]), 200
+
+
+
+@bp.route('/quiz/<int:cert_id>', methods=['POST'])
+@login_required
+def add_quiz(cert_id):
+    cert = Certification.query.get(cert_id)
+    if not cert:
+        return jsonify({'error': 'Certification not found'}), 404
+
+    data = request.get_json()
+    question = data.get('question')
+    options = data.get('options')
+    answer = data.get('answer')
+
+    if not question or not options or not answer:
+        return jsonify({'error': 'Question, options and answer required'}), 400
+
+    quiz = Quiz(cert_id=cert_id, question=question, options=options, answer=answer)
+    db.session.add(quiz)
+    db.session.commit()
+
+    return jsonify({
+        'id': quiz.id,
+        'cert_id': cert_id,
+        'question': question,
+        'options': options,
+        'answer': answer
+    }), 201
+
+
+@bp.route('/video/<int:cert_id>', methods=['POST'])
+@login_required
+def add_video(cert_id):
+    cert = Certification.query.get(cert_id)
+    if not cert:
+        return jsonify({'error': 'Certification not found'}), 404
+
+    data = request.get_json()
+    title = data.get('title')
+    url = data.get('url')
+
+    if not title or not url:
+        return jsonify({'error': 'Video title and URL required'}), 400
+
+    video = Video(cert_id=cert_id, title=title, url=url)
+    db.session.add(video)
+    db.session.commit()
+
+    return jsonify({'id': video.id, 'title': title, 'url': url}), 201
