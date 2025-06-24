@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000" 
+    environment:
+      - FLASK_ENV=development
+      - SECRET_KEY=e3d801e9e817334e8274eba43cc4232d
+      - DATABASE_URL=postgresql://postgres:1234@postgres:5432/dbSubul
+      - AWS_ACCESS_KEY_ID=ASIAQGYBPWCVON7ISTJX
+      - AWS_SECRET_ACCESS_KEY=pDDWYXFr30M9L3ETQe3GBTWiefeugX48XvJmyUhK
+      - AWS_SESSION_TOKEN=IQoJb3JpZ2luX2VjEA8aCXVzLWVhc3QtMSJHMEUCICPMGd/Boo54NZxLmyCeKe7nuZlyu1MC5axbUeh/J0PjAiEAssVevLIpv0wYB
+                  13i/nAmeSHVLtD7aWDMAbPMkxjfFTIq8wII9///////////ARAAGgwwMTQ0OTg2NDAwNDIiDJKI/+/xLPbK9Z4s5SrHAkP55MfBCF
+                  MeC4HWU8BasYLkKvV7Rpznxlz60TXxSsUVVFnZnkb9Og2SucNWom1rogHaFJMkRSHvwJJuk5xJaxopRdbWsns8EqupPIg48cPOZ0o
+                  xjh/F1EtpATdvUTzf80En2vsuEsfYEHc/jcnxy4FYXaNfwWQy8/m1icHe5LVCQUh4RtVqvRENq36Y+PCPgEbyiNmq/4lg9ryoVFt3
+                  RCPPlAVKIsNKBQfrqZYNcfO2cxdcuaRKXk/d7AERom8A/uy4IoPshlkt7CG6s4qhgyr61vjVOy/382Xq3ZooQsYqiB2ctsa2qryGJ
+                  3X0qt+n2DeflUFfHdVB6rFtG1B2/GpoghfYVHT2Tavs6AF0zmzqJMVq+bLkaMe9f6qCS1BqIdtBEbi9QAAZ6HNIepbpeolvWqsTGT
+                  sbDT/U/1NCh+MbMjOnyGtJLzDbguLCBjqnASOleUENIRDIAoRq0btSJQJjpBJePpM5tPYIfxJ9SdYHKnzJoDHCESQcdoJjj88RFrC
+                  kwgOaN6Xlxc9ju5D4IL306wRS/Meotiy9sGefb6II9If4hnjI7RofWyxWtbrxhTbHTHiJ0aNuu9UBFGHZKcuRT7OHu9tPhqKGwb+S
+                  f46/L3+PcdjV8hafz2olhe3Z75t+OHqbpbe2BlzUmvujMAWhW5A1Vc8b
+      - AWS_DEFAULT_REGION=us-east-1
+      - S3_BUCKET_NAME=subul-platform-014498640042
+    depends_on:
+      - postgres
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=dbSubul
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+volumes:
+  postgres_data:
