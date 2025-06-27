@@ -37,7 +37,7 @@ class User(db.Model, UserMixin):
 class Certification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
-
+    lessons = db.relationship('Lesson', backref='certification', lazy=True)
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cert_id = db.Column(db.Integer, db.ForeignKey('certification.id'))
@@ -82,3 +82,18 @@ class UserQuizAnswer(db.Model):
     user = db.relationship('User', backref='quiz_answers')
     quiz = db.relationship('Quiz', backref='user_answers')
 
+class Lesson(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    certification_id = db.Column(db.Integer, db.ForeignKey('certification.id'), nullable=False)
+    subparts = db.relationship('Subpart', backref='lesson', lazy=True)
+    completed = db.Column(db.Boolean, default=False)
+
+class Subpart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    duration = db.Column(db.String(50), nullable=False)
+    video_url = db.Column(db.String(255), nullable=True)
+    completed = db.Column(db.Boolean, default=False)
+    is_quiz = db.Column(db.Boolean, default=False)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lesson.id'), nullable=False)

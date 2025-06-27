@@ -7,6 +7,8 @@ from flask_login import current_user
 from app.models import Job, User, Certification, Quiz, LabGuide, Video
 from werkzeug.utils import secure_filename
 import os
+from flask_login import logout_user
+
 bp = Blueprint('routes', __name__)
 
 @bp.route('/login', methods=['POST'])
@@ -18,10 +20,18 @@ def login():
     user = User.query.filter_by(username=username).first()
     if user and user.check_password(password):
         login_user(user)
-        return jsonify({'message': 'Login successful', 'user_id': user.id}), 200
+        return jsonify({
+            'message': 'Login successful',
+            'user_id': user.id,
+            'is_admin': user.is_admin  # Add is_admin
+        }), 200
     return jsonify({'message': 'Invalid credentials'}), 401
 
-
+@bp.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'message': 'Logout successful'}), 200
     
 
 @bp.route('/dashboard', methods=['GET'])
@@ -45,7 +55,54 @@ def certifications():
 
     return jsonify(result), 200
 
+@bp.route('/certifications/<int:cert_id>', methods=['GET'])
+@login_required
+def get_certification(cert_id):
+    cert = Certification.query.get_or_404(cert_id)
+    if cert not in current_user.certifications:
+        return jsonify({'message': 'غير مصرح لك بالوصول إلى هذه الدورة'}), 403
+    return jsonify({'id': cert.id, 'name': cert.name}), 200
 
+@bp.route('/certifications/<int:cert_id>/lessons', methods=['GET'])
+@login_required
+def get_lessons(cert_id):
+    cert = Certification.query.get_or_404(cert_id)
+    if cert not in current_user.certifications:
+        return jsonify({'message': 'غير مصرح لك بالوصول إلى هذه الدورة'}), 403
+
+    lessons = Lesson.query.filter_by(certification_id=cert_id).all()
+    result = []
+    for lesson in lessons:
+        subparts = Subpart.query.filter_by(lesson_id=lesson.id).all()
+        result.append({
+            'id': lesson.id,
+            'title': lesson.title,
+            'completed': lesson.completed,
+            'subparts': [
+                {
+                    'id': subpart.id,
+                    'title': subpart.title,
+                    'duration': subpart.duration,
+                    'videoUrl': subpart.video_url,
+                    'completed': subpart.completed,
+                    'isQuiz': subpart.is_quiz
+                } for subpart in subparts
+            ]
+        })
+    return jsonify(result), 200
+
+@bp.route('/subparts/<int:subpart_id>/complete', methods=['POST'])
+@login_required
+def complete_subpart(subpart_id):
+    subpart = Subpart.query.get_or_404(subpart_id)
+    lesson = Lesson.query.get(subpart.lesson_id)
+    cert = Certification.query.get(lesson.certification_id)
+    if cert not in current_user.certifications:
+        return jsonify({'message': 'غير مصرح لك بالوصول إلى هذه الدورة'}), 403
+    subpart.completed = True
+    lesson.completed = all(s.completed for s in lesson.subparts)
+    db.session.commit()
+    return jsonify({'message': 'Subpart marked as completed'}), 200
 @bp.route('/quiz/<int:cert_id>', methods=['GET'])
 @login_required
 def get_quiz(cert_id):

@@ -8,6 +8,8 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ currentPage }: DashboardProps) {
+
+  
   return (
     <div className={`${styles.view} ${styles.active}`}>
       <div className={styles.container}>

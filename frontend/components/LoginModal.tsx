@@ -1,5 +1,5 @@
-import React, { useState, FormEvent } from 'react';
-import { useRouter } from 'next/router';
+import { useState, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { X, Mail, Lock } from 'lucide-react';
 import styles from '@/styles/LoginModal.module.css';
 
@@ -9,30 +9,54 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) {
-  const [email, setEmail] = useState('');
+  const [username, setusername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log('Login submitted: email=', email); // Debug log
+    setError('');
+    console.log('Login submitted: username=', username); // Debug log
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch('http://localhost:5000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password }), // Backend expects 'username'
+        credentials: 'include', // Include cookies for Flask-Login session
+      });
 
-    if (email === 'demo@subol.com' && password === 'demo123') {
-      console.log('Login successful, redirecting to /dashboard'); // Debug log
-      localStorage.setItem('isLoggedIn', 'true');
-      setIsLoggedIn(true);
-      onClose();
-      router.push('/dashboard');
-    } else {
-      console.log('Login failed: invalid credentials'); // Debug log
-      alert('البريد الإلكتروني أو كلمة المرور غير صحيحة. حاول مرة أخرى.');
+      const data = await response.json();
+      if (response.ok) {
+        console.log('Login successful:', data); // Debug log
+        localStorage.setItem('isLoggedIn', 'true');
+        setIsLoggedIn(true);
+
+        // Check admin status (assuming backend includes is_admin in response)
+        const isAdmin = data.is_admin || false; // Backend needs to include is_admin
+        onClose();
+        
+        // Redirect based on role
+        if (isAdmin) {
+          console.log('Redirecting to /admin');
+          router.push('/admin');
+        } else {
+          console.log('Redirecting to /dashboard');
+          router.push('/dashboard');
+        }
+      } else {
+        console.error('Login failed:', data.message);
+        setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.');
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -55,13 +79,13 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
           <div className={styles.loginBody}>
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.formGroup}>
-                <label htmlFor="email">البريد الإلكتروني</label>
+                <label htmlFor="username">البريد الإلكتروني</label>
                 <div className={styles.inputWrapper}>
                   <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    type="username"
+                    id="username"
+                    value={username}
+                    onChange={(e) => setusername(e.target.value)}
                     required
                     placeholder="أدخل بريدك الإلكتروني"
                   />
@@ -79,20 +103,17 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
                     required
                     placeholder="أدخل كلمة المرور"
                   />
-                  
                 </div>
               </div>
+
+              {error && <p className={styles.error}>{error}</p>}
 
               <button type="submit" disabled={isLoading} className={styles.loginBtn}>
                 {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
               </button>
             </form>
 
-            <div className={styles.demoCredentials}>
-              <h4>للتجربة استخدم:</h4>
-              <p><strong>البريد:</strong> demo@subol.com</p>
-              <p><strong>كلمة المرور:</strong> demo123</p>
-            </div>
+            
           </div>
         </div>
       </div>

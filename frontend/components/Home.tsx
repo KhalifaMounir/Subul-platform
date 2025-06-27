@@ -3,17 +3,21 @@ import Header from './HomeHeader';
 import LoginModal from './LoginModal';
 import styles from '@/styles/Home.module.css';
 
-function App() {
+interface HomeProps {
+  isLoggedIn: boolean;
+  setIsLoggedIn: (value: boolean) => void;
+}
+
+function App({ isLoggedIn, setIsLoggedIn }: HomeProps) {
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleLoginClick = () => {
-    console.log('Login button clicked, opening modal'); // Debug log
+    console.log('Login button clicked, opening modal');
     setShowLoginModal(true);
   };
 
   const handleModalClose = () => {
-    console.log('Modal closing'); // Debug log
+    console.log('Modal closing');
     setShowLoginModal(false);
   };
 
@@ -36,7 +40,7 @@ function App() {
   );
 }
 
-// HomePage Component
+// HomePage Component (unchanged)
 function HomePage({ onLoginClick }: { onLoginClick: () => void }) {
   return (
     <div className={styles.homeContainer}>
