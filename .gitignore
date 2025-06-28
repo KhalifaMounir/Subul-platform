@@ -194,5 +194,6 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-frontend/.next
-frontend/node_modules
+frontend/.next/
+node_modules/
+venv/
