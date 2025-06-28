@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app import db
-from app.models import Certification, Quiz, LabGuide, Video
+from app.models import Certification, Quiz, LabGuide, Video, User
 from werkzeug.utils import secure_filename
 import os
 from functools import wraps
@@ -99,6 +99,21 @@ def admin_add_quiz(cert_id):
         'options': options,
         'answer': answer
     }), 201
+ 
+@admin_bp.route('/api/certifications/by-name', methods=['GET'])
+@login_required
+@admin_required
+def get_cert_id_by_name():
+    cert_name = request.args.get('name')
+    if not cert_name:
+        return jsonify({'error': 'Certification name is required'}), 400
+
+    cert = Certification.query.filter_by(name=cert_name).first()
+    if not cert:
+        return jsonify({'error': 'Certification not found'}), 404
+
+    return jsonify({'cert_id': cert.id}), 200
+
 
 @admin_bp.route('/admin/certifications/<int:cert_id>/lab', methods=['POST'])
 @login_required

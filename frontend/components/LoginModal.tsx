@@ -9,7 +9,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) {
-  const [username, setusername] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,37 +19,26 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    console.log('Login submitted: username=', username); // Debug log
+    console.log('Login submitted: username=', username);
 
     try {
       const response = await fetch('http://localhost:5000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username, password }), // Backend expects 'username'
-        credentials: 'include', // Include cookies for Flask-Login session
+        body: JSON.stringify({ username, password }),
+        credentials: 'include',
       });
 
       const data = await response.json();
       if (response.ok) {
-        console.log('Login successful:', data); // Debug log
+        console.log('Login successful:', data);
         localStorage.setItem('isLoggedIn', 'true');
         setIsLoggedIn(true);
-
-        // Check admin status (assuming backend includes is_admin in response)
-        const isAdmin = data.is_admin || false; // Backend needs to include is_admin
         onClose();
-        
-        // Redirect based on role
-        if (isAdmin) {
-          console.log('Redirecting to /admin');
-          router.push('/admin');
-        } else {
-          console.log('Redirecting to /dashboard');
-          router.push('/dashboard');
-        }
+        router.push('/dashboard'); // Always redirect to /dashboard
       } else {
         console.error('Login failed:', data.message);
-        setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        setError(data.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -65,12 +54,24 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
         <div className={styles.loginContent}>
           <div className={styles.loginBackground}></div>
           <div className={styles.loginHeader}>
-            <button onClick={() => { console.log('Close button clicked'); onClose(); }} className={styles.closeBtn}>
+            <button
+              onClick={() => {
+                console.log('Close button clicked');
+                onClose();
+              }}
+              className={styles.closeBtn}
+              aria-label="إغلاق النافذة"
+            >
               <X size={20} />
             </button>
             <div className={styles.heroIcon}>
               <svg className={styles.heroIconSvg} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                />
               </svg>
             </div>
             <h2 className={styles.loginHeader}>مرحباً بك في سبل</h2>
@@ -79,21 +80,28 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
           <div className={styles.loginBody}>
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.formGroup}>
-                <label htmlFor="username">البريد الإلكتروني</label>
+                <label htmlFor="username" className={styles.label}>
+                  اسم المستخدم
+                  <Mail size={16} className={styles.inputIcon} />
+                </label>
                 <div className={styles.inputWrapper}>
                   <input
-                    type="username"
+                    type="text"
                     id="username"
                     value={username}
-                    onChange={(e) => setusername(e.target.value)}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
-                    placeholder="أدخل بريدك الإلكتروني"
+                    placeholder="أدخل اسم المستخدم"
+                    className={styles.input}
                   />
                 </div>
               </div>
 
               <div className={styles.formGroup}>
-                <label htmlFor="password">كلمة المرور</label>
+                <label htmlFor="password" className={styles.label}>
+                  كلمة المرور
+                  <Lock size={16} className={styles.inputIcon} />
+                </label>
                 <div className={styles.inputWrapper}>
                   <input
                     type="password"
@@ -102,6 +110,7 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="أدخل كلمة المرور"
+                    className={styles.input}
                   />
                 </div>
               </div>
@@ -112,8 +121,6 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
                 {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
               </button>
             </form>
-
-            
           </div>
         </div>
       </div>

@@ -13,16 +13,13 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-
     # Initialize CORS with explicit configuration
-    CORS(app, resources={
-        r"/*": {
-            "origins": ["http://localhost:3000"],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Accept", "Authorization"],
-            "supports_credentials": True
-        }
-    })
+    # Allow requests from the Next.js frontend
+    CORS(app,
+     origins=["http://localhost:3000"],
+     supports_credentials=True,
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Accept", "Authorization"])
 
     db.init_app(app)
     login_manager.init_app(app)

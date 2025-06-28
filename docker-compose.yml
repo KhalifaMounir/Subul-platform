@@ -7,7 +7,7 @@ services:
     environment:
       - FLASK_ENV=development
       - SECRET_KEY=e3d801e9e817334e8274eba43cc4232d
-      - DATABASE_URL=postgresql://postgres:1234@postgres:5432/dbSubul
+      - DATABASE_URL=postgresql://postgres:123pgAdmin4@postgres:5432/dbSubul
       - AWS_ACCESS_KEY_ID=ASIAQGYBPWCVON7ISTJX
       - AWS_SECRET_ACCESS_KEY=pDDWYXFr30M9L3ETQe3GBTWiefeugX48XvJmyUhK
       - AWS_SESSION_TOKEN=IQoJb3JpZ2luX2VjEA8aCXVzLWVhc3QtMSJHMEUCICPMGd/Boo54NZxLmyCeKe7nuZlyu1MC5axbUeh/J0PjAiEAssVevLIpv0wYB

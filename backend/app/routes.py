@@ -8,9 +8,15 @@ from app.models import Job, User, Certification, Quiz, LabGuide, Video
 from werkzeug.utils import secure_filename
 import os
 from flask_login import logout_user
+from flask_cors import CORS
+
+
+
 
 bp = Blueprint('routes', __name__)
 
+# Allow from Next.js origin
+CORS(bp, supports_credentials=True, origins=['http://localhost:3000'])
 @bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
