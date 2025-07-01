@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import QuizModal from './QuizModal';
 import styles from '@/styles/Course.module.css';
 
-export default function Course() {
+export default function Course({ certId }) {
   const router = useRouter();
   const [currentLesson, setCurrentLesson] = useState(null);
   const [currentSubpart, setCurrentSubpart] = useState(null);
@@ -11,118 +11,67 @@ export default function Course() {
   const [progress, setProgress] = useState(0);
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [expandedLessons, setExpandedLessons] = useState({});
-  const [lessons, setLessons] = useState([
-    {
-      id: 1,
-      title: "مقدمة عن الحوسبة السحابية",
-      completed: false,
-      subparts: [
-        {
-          id: 101,
-          title: "مفاهيم الحوسبة السحابية",
-          duration: "30 دقيقة",
-          videoUrl: "/videos/test.mp4",
-          completed: true
-        },
-        {
-          id: 102,
-          title: "فوائد Azure",
-          duration: "25 دقيقة",
-          videoUrl: "/videos/test.mp4",
-          completed: false
+  const [lessons, setLessons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch lessons and subparts from API
+  useEffect(() => {
+    const fetchLessons = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:5000/certifications/${certId}/lessons`, {
+          credentials: 'include', // Include cookies for authentication
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch lessons');
         }
-      ]
-    },
-    {
-      id: 2,
-      title: "خدمات Azure الأساسية",
-      completed: false,
-      subparts: [
-        {
-          id: 201,
-          title: "الخدمات الحسابية",
-          duration: "40 دقيقة",
-          videoUrl: "/videos/test.mp4",
-          completed: false
-        },
-        {
-          id: 202,
-          title: "خدمات التخزين",
-          duration: "35 دقيقة",
-          videoUrl: "/videos/test.mp4",
-          completed: false
-        }
-      ]
-    },
-    {
-      id: 3,
-      title: "إدارة الموارد",
-      completed: false,
-      subparts: [
-        {
-          id: 301,
-          title: "مجموعات الموارد",
-          duration: "20 دقيقة",
-          videoUrl: "/videos/test.mp4",
-          completed: false
-        },
-        {
-          id: 302,
-          title: "إدارة التكاليف",
-          duration: "30 دقيقة",
-          videoUrl: "/videos/test.mp4",
-          completed: false
-        }
-      ]
-    },
-    {
-      id: 4,
-      title: "اختبار نهائي",
-      completed: false,
-      subparts: [
-        {
-          id: 401,
-          title: "اختبار شهادة Azure",
-          duration: "60 دقيقة",
-          videoUrl: "",
-          completed: false,
-          isQuiz: true
-        }
-      ]
-    }
-  ]);
+        const data = await response.json();
+        setLessons(data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    fetchLessons();
+  }, [certId]);
 
   // Calculate and save progress
   const calculateProgress = () => {
     const totalSubparts = lessons.flatMap(lesson => lesson.subparts).length;
     const completedSubparts = lessons.flatMap(lesson => lesson.subparts).filter(subpart => subpart.completed).length;
-    const newProgress = Math.round((completedSubparts / totalSubparts) * 100);
+    const newProgress = totalSubparts ? Math.round((completedSubparts / totalSubparts) * 100) : 0;
     setProgress(newProgress);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('progress-az-900', newProgress.toString());
-      console.log(`Saved progress-az-900: ${newProgress}%`); // Debug log
+      localStorage.setItem(`progress-cert-${certId}`, newProgress.toString());
+      console.log(`Saved progress-cert-${certId}: ${newProgress}%`);
     }
     return newProgress;
   };
 
-  // Calculate initial progress on mount and when lessons change
+  // Calculate progress when lessons change
   useEffect(() => {
-    calculateProgress();
+    if (lessons.length > 0) {
+      calculateProgress();
+    }
   }, [lessons]);
 
-  // Load first incomplete subpart by default and expand its lesson
+  // Load first incomplete subpart by default
   useEffect(() => {
-    const firstIncompleteSubpart = lessons
-      .flatMap(lesson => lesson.subparts.map(subpart => ({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title })))
-      .find(subpart => !subpart.completed);
-    
-    if (firstIncompleteSubpart) {
-      const lesson = lessons.find(l => l.id === firstIncompleteSubpart.lessonId);
-      setCurrentLesson(lesson);
-      setCurrentSubpart(firstIncompleteSubpart);
-      setExpandedLessons(prev => ({ ...prev, [firstIncompleteSubpart.lessonId]: true }));
+    if (lessons.length > 0) {
+      const firstIncompleteSubpart = lessons
+        .flatMap(lesson => lesson.subparts.map(subpart => ({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title })))
+        .find(subpart => !subpart.completed);
+      
+      if (firstIncompleteSubpart) {
+        const lesson = lessons.find(l => l.id === firstIncompleteSubpart.lessonId);
+        setCurrentLesson(lesson);
+        setCurrentSubpart(firstIncompleteSubpart);
+        setExpandedLessons(prev => ({ ...prev, [firstIncompleteSubpart.lessonId]: true }));
+      }
     }
-  }, []);
+  }, [lessons]);
 
   const handleSubpartClick = (subpart, lesson) => {
     setCurrentLesson(lesson);
@@ -130,20 +79,31 @@ export default function Course() {
     setVideoError(false);
   };
 
-  const markSubpartCompleted = (subpartId) => {
-    setLessons(prevLessons =>
-      prevLessons.map(lesson =>
-        lesson.subparts.some(subpart => subpart.id === subpartId)
-          ? {
-              ...lesson,
-              subparts: lesson.subparts.map(subpart =>
-                subpart.id === subpartId ? { ...subpart, completed: true } : subpart
-              ),
-              completed: lesson.subparts.every(subpart => subpart.id === subpartId ? true : subpart.completed)
-            }
-          : lesson
-      )
-    );
+  const markSubpartCompleted = async (subpartId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/subparts/${subpartId}/complete`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to mark subpart as completed');
+      }
+      setLessons(prevLessons =>
+        prevLessons.map(lesson =>
+          lesson.subparts.some(subpart => subpart.id === subpartId)
+            ? {
+                ...lesson,
+                subparts: lesson.subparts.map(subpart =>
+                  subpart.id === subpartId ? { ...subpart, completed: true } : subpart
+                ),
+                completed: lesson.subparts.every(subpart => subpart.id === subpartId ? true : subpart.completed)
+              }
+            : lesson
+        )
+      );
+    } catch (err) {
+      console.error('Error marking subpart as completed:', err);
+    }
   };
 
   const handleNextSubpart = () => {
@@ -198,6 +158,14 @@ export default function Course() {
   };
 
   const isQuizLesson = currentSubpart?.isQuiz;
+
+  if (loading) {
+    return <div>Loading lessons...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <>
@@ -329,7 +297,7 @@ export default function Course() {
       </div>
 
       {showQuizModal && (
-        <QuizModal onClose={handleCloseQuiz} />
+        <QuizModal onClose={handleCloseQuiz} certId={certId} />
       )}
     </>
   );

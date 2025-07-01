@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app import db
-from app.models import Certification, Quiz, LabGuide, Video, User
+from app.models import Certification, Quiz, LabGuide, Video, User, Subpart, Lesson
 from werkzeug.utils import secure_filename
 import os
 from functools import wraps
 from .s3_utils import generate_presigned_url, upload_fileobj , delete_s3_object 
 import logging
+
+
 
 logging.basicConfig(level=logging.DEBUG)
 admin_bp = Blueprint('admin_routes', __name__)
@@ -54,6 +56,39 @@ def admin_create_user():
         'username': username,
         'is_admin': is_admin
     }), 201
+
+# Add lesson
+@admin_bp.route('/admin/lessons', methods=['POST'])
+@login_required
+@admin_required
+def admin_add_lesson():
+    data = request.get_json()
+    title = data.get('title')
+    certification_id = data.get('certification_id')
+
+    # Validate input
+    if not title:
+        return jsonify({'error': 'Lesson title required'}), 400
+    if not certification_id:
+        return jsonify({'error': 'Certification ID required'}), 400
+
+    # Check if certification exists
+    certification = Certification.query.get(certification_id)
+    if not certification:
+        return jsonify({'error': 'Certification not found'}), 404
+
+    # Create new lesson
+    lesson = Lesson(title=title, certification_id=certification_id, completed=False)
+    db.session.add(lesson)
+    db.session.commit()
+
+    return jsonify({
+        'id': lesson.id,
+        'title': lesson.title,
+        'certification_id': lesson.certification_id,
+        'completed': lesson.completed
+    }), 201
+
 # Add certification
 @admin_bp.route('/admin/certifications', methods=['POST'])
 @login_required
@@ -61,13 +96,16 @@ def admin_create_user():
 def admin_add_certification():
     data = request.get_json()
     name = data.get('name')
+    description = data.get('description')
     if not name:
         return jsonify({'error': 'Certification name required'}), 400
+    if not description:
+        return jsonify({'error': 'Certification description required'}), 400
 
-    cert = Certification(name=name)
+    cert = Certification(name=name, description=description)
     db.session.add(cert)
     db.session.commit()
-    return jsonify({'id': cert.id, 'name': cert.name}), 201
+    return jsonify({'id': cert.id, 'name': cert.name, 'description': cert.description}), 201
 
 
 
@@ -99,6 +137,44 @@ def admin_add_quiz(cert_id):
         'options': options,
         'answer': answer
     }), 201
+
+@admin_bp.route('/lessons-and-subparts', methods=['GET'])
+@login_required
+def get_lessons_and_subparts():
+    certifications = Certification.query.all()
+    result = []
+    
+    for cert in certifications:
+        lessons = Lesson.query.filter_by(certification_id=cert.id).all()
+        cert_data = {
+            'id': cert.id,
+            'name': cert.name,  # Assuming Certification has a 'name' field
+            'booked_by_user': cert in current_user.certifications,
+            'lessons': []
+        }
+        
+        for lesson in lessons:
+            subparts = Subpart.query.filter_by(lesson_id=lesson.id).all()
+            lesson_data = {
+                'id': lesson.id,
+                'title': lesson.title,
+                'completed': lesson.completed,
+                'subparts': [
+                    {
+                        'id': subpart.id,
+                        'title': subpart.title,
+                        'duration': subpart.duration,
+                        'videoId': subpart.video_id,  # Assuming Subpart has a 'video_id' field
+                        'completed': subpart.completed,
+                        'isQuiz': subpart.is_quiz
+                    } for subpart in subparts
+                ]
+            }
+            cert_data['lessons'].append(lesson_data)
+        
+        result.append(cert_data)
+    
+    return jsonify(result), 200
  
 @admin_bp.route('/api/certifications/by-name', methods=['GET'])
 @login_required
@@ -114,7 +190,7 @@ def get_cert_id_by_name():
 
     return jsonify({'cert_id': cert.id}), 200
 
-
+# add lab guide
 @admin_bp.route('/admin/certifications/<int:cert_id>/lab', methods=['POST'])
 @login_required
 @admin_required
@@ -150,7 +226,7 @@ def admin_add_lab_guide(cert_id):
               return jsonify({'error': 'Upload to S3 failed'}), 500
       return jsonify({'error': 'Invalid file type. Only PDF, MP4, or MOV allowed'}), 400
 
-
+# add video
 @admin_bp.route('/admin/certifications/<int:cert_id>/video', methods=['POST'])
 @login_required
 @admin_required
@@ -308,7 +384,36 @@ def admin_delete_video(cert_id, video_id):
     db.session.commit()
     return jsonify({'message': 'Video deleted successfully'}), 200
 
+#Add subpart 
+@admin_bp.route('/admin/subparts', methods=['POST'])
+@login_required
+@admin_required
+def create_subpart():
+    data = request.get_json()
+    title = data.get('title')
+    duration = data.get('duration')
+    lesson_id = data.get('lesson_id')
 
+    if not all([title, duration, lesson_id]):
+        return jsonify({'error': 'Title, duration, and lesson_id are required'}), 400
+
+    # Optional: validate that lesson exists
+    lesson = Lesson.query.get(lesson_id)
+    if not lesson:
+        return jsonify({'error': 'Lesson not found'}), 404
+
+    new_subpart = Subpart(title=title, duration=duration, lesson_id=lesson_id)
+    db.session.add(new_subpart)
+    db.session.commit()
+
+    return jsonify({
+        'id': new_subpart.id,
+        'title': new_subpart.title,
+        'duration': new_subpart.duration,
+        'lesson_id': new_subpart.lesson_id
+    }), 201
+
+# Get lab guide
 @admin_bp.route('/admin/certifications/<int:cert_id>/lab', methods=['GET'])
 @login_required
 @admin_required
@@ -320,7 +425,7 @@ def get_lab_guide(cert_id):
       bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
       url = generate_presigned_url(bucket_name, lab_guide.object_key)
       return jsonify({'id': lab_guide.id, 'cert_id': cert_id, 'pdf_url': url}), 200
-
+#get video
 @admin_bp.route('/admin/certifications/<int:cert_id>/video', methods=['GET'])
 @login_required
 @admin_required
@@ -333,7 +438,7 @@ def get_video(cert_id):
     bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
     url = generate_presigned_url(bucket_name, video.object_key)
     return jsonify({'id': video.id, 'cert_id': cert_id, 'title': video.title, 'url': url}), 200
-
+#delete lab guide
 @admin_bp.route('/admin/certifications/<int:cert_id>/lab/<int:lab_id>', methods=['DELETE'])
 @login_required
 @admin_required

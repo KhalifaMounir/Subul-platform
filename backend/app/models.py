@@ -8,7 +8,7 @@ from app.s3_utils import generate_presigned_url
 user_certifications = db.Table(
     'user_certifications',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('certification_id', db.Integer, db.ForeignKey('certification.id'), primary_key=True)
+    db.Column('certification_id', db.Integer, db.ForeignKey('certification.id'), primary_key=True),
 )
 
 job_certifications = db.Table(
@@ -37,10 +37,19 @@ class User(db.Model, UserMixin):
 class Certification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
-    lessons = db.relationship('Lesson', backref='certification', lazy=True)
+    lessons = db.relationship('Lesson', backref='certification', lazy=True , cascade='all, delete-orphan')
+    quizzes = db.relationship(
+        'Quiz',
+        backref='certification',
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
+
+    description=db.Column('description', db.String(255))
+
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id'))
+    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id', ondelete='CASCADE'), nullable=False)
     question = db.Column(db.String(256))
     options = db.Column(db.JSON)
     answer = db.Column(db.String(128))
@@ -64,7 +73,7 @@ class LabGuide(db.Model):
 
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id'))
+    subpart_id = db.Column(db.Integer, db.ForeignKey('subpart.id', ondelete='CASCADE'),nullable=False)
     title = db.Column(db.String(128))
     object_key = db.Column(db.String(255))
 
@@ -85,15 +94,15 @@ class UserQuizAnswer(db.Model):
 class Lesson(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
-    certification_id = db.Column(db.Integer, db.ForeignKey('certification.id'), nullable=False)
-    subparts = db.relationship('Subpart', backref='lesson', lazy=True)
+    certification_id = db.Column(db.Integer, db.ForeignKey('certification.id',  ondelete='CASCADE'), nullable=False)
+    subparts = db.relationship('Subpart', backref='lesson', lazy=True, cascade='all, delete-orphan')
     completed = db.Column(db.Boolean, default=False)
 
 class Subpart(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
     duration = db.Column(db.String(50), nullable=False)
-    video_url = db.Column(db.String(255), nullable=True)
+    video_id = db.Column(db.String(20), nullable=False)  # Only store video ID
     completed = db.Column(db.Boolean, default=False)
     is_quiz = db.Column(db.Boolean, default=False)
-    lesson_id = db.Column(db.Integer, db.ForeignKey('lesson.id'), nullable=False)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lesson.id', ondelete='CASCADE'), nullable=False)

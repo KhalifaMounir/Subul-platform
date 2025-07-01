@@ -9,9 +9,7 @@ from werkzeug.utils import secure_filename
 import os
 from flask_login import logout_user
 from flask_cors import CORS
-
-
-
+from app.models import Subpart, Lesson, UserQuizAnswer
 
 bp = Blueprint('routes', __name__)
 
@@ -109,6 +107,7 @@ def complete_subpart(subpart_id):
     lesson.completed = all(s.completed for s in lesson.subparts)
     db.session.commit()
     return jsonify({'message': 'Subpart marked as completed'}), 200
+
 @bp.route('/quiz/<int:cert_id>', methods=['GET'])
 @login_required
 def get_quiz(cert_id):

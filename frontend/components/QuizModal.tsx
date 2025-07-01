@@ -3,6 +3,7 @@ import styles from '@/styles/Quiz.module.css'
 
 interface QuizModalProps {
   onClose: () => void
+  certId: any
 }
 
 export default function QuizModal({ onClose }: QuizModalProps) {

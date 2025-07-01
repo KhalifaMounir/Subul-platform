@@ -1,0 +1,209 @@
+.subpartCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+}
+.deleteVideoButton {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.deleteVideoButton:hover {
+  background-color: #d9363e;
+}
+
+.deleteLabGuideButton {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.deleteLabGuideButton:hover {
+  background-color: #d9363e;
+}
+
+.labGuideBadge {
+  background-color: #1890ff;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.labGuideInfo {
+  margin-top: 12px;
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.labGuideInfoText {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+}
+.subpartCard:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.subpartHeader {
+  padding: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.subpartHeader:hover {
+  background: #f9fafb;
+}
+
+.subpartHeaderContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.subpartLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.subpartTitle {
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.subpartDuration {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.subpartRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+}
+
+.completedBadge {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.quizBadge {
+  background: #f3e8ff;
+  color: #7c2d12;
+}
+
+.videoBadge {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.expandedContent {
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 1rem;
+}
+
+.adminTitle {
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 0.75rem 0;
+}
+
+.actionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.addVideoButton {
+  background: #2563eb;
+  color: white;
+}
+
+.addVideoButton:hover {
+  background: #1d4ed8;
+}
+
+.addLabGuideButton {
+  background: #16a34a;
+  color: white;
+}
+
+.addLabGuideButton:hover {
+  background: #15803d;
+}
+
+.videoInfo {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.videoInfoText {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.chevronIcon {
+  color: #374151;
+}
+
+.videoIcon {
+  color: #2563eb;
+}
+
+.quizIcon {
+  color: #7c3aed;
+}
+
+.fileIcon {
+  color: #9ca3af;
+}
+
+@media (max-width: 768px) {
+  .actionsGrid {
+    grid-template-columns: 1fr;
+  }
+}

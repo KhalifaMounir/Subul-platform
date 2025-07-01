@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Mail, Lock } from 'lucide-react';
@@ -15,34 +17,45 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
   const [error, setError] = useState('');
   const router = useRouter();
 
+  // ✅ Handle form submission
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    console.log('Login submitted: username=', username);
 
     try {
       const response = await fetch('http://localhost:5000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
         credentials: 'include',
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
+
       if (response.ok) {
         console.log('Login successful:', data);
+
+        // ✅ Store session data
         localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('isAdmin', String(data.is_admin));
+
         setIsLoggedIn(true);
         onClose();
-        router.push('/dashboard'); // Always redirect to /dashboard
+
+        // ✅ Redirect based on admin status
+        if (data.is_admin) {
+          router.push('/admin/certifications');
+        } else {
+          router.push('/profile');
+        }
+
       } else {
-        console.error('Login failed:', data.message);
-        setError(data.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
+        setError(data.message || 'Invalid username or password');
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.');
+      setError('An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -53,17 +66,16 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
       <div className={styles.modalContent}>
         <div className={styles.loginContent}>
           <div className={styles.loginBackground}></div>
+
           <div className={styles.loginHeader}>
             <button
-              onClick={() => {
-                console.log('Close button clicked');
-                onClose();
-              }}
+              onClick={onClose}
               className={styles.closeBtn}
-              aria-label="إغلاق النافذة"
+              aria-label="Close"
             >
               <X size={20} />
             </button>
+
             <div className={styles.heroIcon}>
               <svg className={styles.heroIconSvg} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -77,6 +89,7 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
             <h2 className={styles.loginHeader}>مرحباً بك في سبل</h2>
             <p>تسجيل الدخول لبدء رحلة التعلم</p>
           </div>
+
           <div className={styles.loginBody}>
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.formGroup}>

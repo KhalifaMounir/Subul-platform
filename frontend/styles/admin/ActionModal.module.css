@@ -1,0 +1,230 @@
+.modalOverlay {
+position: fixed;
+inset: 0;
+z-index: 50;
+overflow-y: auto;
+direction: rtl;
+}
+
+.modalContainer {
+display: flex;
+min-height: 100vh;
+align-items: center;
+justify-content: center;
+padding: 1rem;
+}
+
+.modalBackdrop {
+position: fixed;
+inset: 0;
+background: rgba(0, 0, 0, 0.5);
+transition: opacity 0.3s;
+}
+
+.modalContent {
+position: relative;
+width: 100%;
+max-width: 42rem;
+transform: scale(1);
+border-radius: 1rem;
+background: white;
+padding: 1.5rem;
+box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+transition: all 0.3s;
+}
+
+.modalHeader {
+display: flex;
+align-items: center;
+justify-content: space-between;
+border-bottom: 1px solid #e5e7eb;
+padding-bottom: 1rem;
+}
+
+.modalTitle {
+font-size: 1.25rem;
+font-weight: 600;
+color: #111827;
+margin: 0;
+}
+
+.closeButton {
+border-radius: 0.5rem;
+padding: 0.5rem;
+color: #9ca3af;
+background: none;
+border: none;
+cursor: pointer;
+transition: all 0.2s;
+}
+
+.closeButton:hover {
+background: #f3f4f6;
+color: #6b7280;
+}
+
+.modalBody {
+margin-top: 1.5rem;
+}
+
+.form {
+display: flex;
+flex-direction: column;
+gap: 1rem;
+}
+
+.formGroup {
+display: flex;
+flex-direction: column;
+}
+
+.label {
+display: block;
+font-size: 0.875rem;
+font-weight: 500;
+color: #374151;
+margin-bottom: 0.5rem;
+}
+
+.input {
+width: 100%;
+padding: 0.75rem;
+border: 1px solid #d1d5db;
+border-radius: 0.5rem;
+font-size: 0.875rem;
+transition: all 0.2s;
+}
+
+.input:focus {
+outline: none;
+ring: 2px;
+ring-color: #3b82f6;
+border-color: transparent;
+}
+
+.textarea {
+width: 100%;
+padding: 0.75rem;
+border: 1px solid #d1d5db;
+border-radius: 0.5rem;
+font-size: 0.875rem;
+resize: vertical;
+min-height: 80px;
+transition: all 0.2s;
+}
+
+.textarea:focus {
+outline: none;
+ring: 2px;
+ring-color: #3b82f6;
+border-color: transparent;
+}
+
+.select {
+width: 100%;
+padding: 0.75rem;
+border: 1px solid #d1d5db;
+border-radius: 0.5rem;
+font-size: 0.875rem;
+background: white;
+transition: all 0.2s;
+}
+
+.select:focus {
+outline: none;
+ring: 2px;
+ring-color: #3b82f6;
+border-color: transparent;
+}
+
+.fileInput {
+width: 100%;
+padding: 0.75rem;
+border: 1px solid #d1d5db;
+border-radius: 0.5rem;
+font-size: 0.875rem;
+background: white;
+transition: all 0.2s;
+}
+
+.fileInput:focus {
+outline: none;
+ring: 2px;
+ring-color: #3b82f6;
+border-color: transparent;
+}
+
+.optionsContainer {
+display: flex;
+flex-direction: column;
+gap: 0.5rem;
+}
+
+.submitButton {
+width: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 0.5rem;
+padding: 0.75rem 1rem;
+border: none;
+border-radius: 0.5rem;
+cursor: pointer;
+font-weight: 500;
+transition: background-color 0.2s;
+}
+
+.uploadButton {
+background: #2563eb;
+color: white;
+}
+
+.uploadButton:hover {
+background: #1d4ed8;
+}
+
+.labGuideButton {
+background: #16a34a;
+color: white;
+}
+
+.labGuideButton:hover {
+background: #15803d;
+}
+
+.quizButton {
+background: #7c3aed;
+color: white;
+}
+
+.quizButton:hover {
+background: #6d28d9;
+}
+
+.lessonButton {
+background: #4f46e5;
+color: white;
+}
+
+.lessonButton:hover {
+background: #4338ca;
+}
+
+.subpartButton {
+background: #0d9488;
+color: white;
+}
+
+.subpartButton:hover {
+background: #0f766e;
+}
+
+@media (max-width: 768px) {
+.modalContainer {
+padding: 0.5rem;
+}
+
+.modalContent {
+padding: 1rem;
+}
+}
