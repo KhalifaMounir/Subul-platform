@@ -4,13 +4,9 @@ from botocore.exceptions import ClientError
 import os
 
 def get_s3_client():
-      return boto3.client(
-          's3',
-          aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-          aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-          aws_session_token=os.getenv('AWS_SESSION_TOKEN'),
-          region_name=os.getenv('AWS_DEFAULT_REGION')
-      )
+    session = boto3.Session(profile_name='DevOpsTeam-014498640042') 
+    return session.client('s3')
+
 def delete_s3_object(bucket_name, object_key):
     s3_client = boto3.client('s3')
     try:

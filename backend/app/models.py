@@ -73,7 +73,7 @@ class LabGuide(db.Model):
 
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    subpart_id = db.Column(db.Integer, db.ForeignKey('subpart.id', ondelete='CASCADE'),nullable=False)
+    subpart_id = db.Column(db.Integer, db.ForeignKey('subpart.id', ondelete='CASCADE'), nullable=False)
     title = db.Column(db.String(128))
     object_key = db.Column(db.String(255))
 
@@ -102,7 +102,9 @@ class Subpart(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
     duration = db.Column(db.String(50), nullable=False)
-    video_id = db.Column(db.String(20), nullable=False)  # Only store video ID
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lesson.id', ondelete='CASCADE'), nullable=False)
     completed = db.Column(db.Boolean, default=False)
     is_quiz = db.Column(db.Boolean, default=False)
-    lesson_id = db.Column(db.Integer, db.ForeignKey('lesson.id', ondelete='CASCADE'), nullable=False)
+    video = db.relationship('Video', backref='subpart', uselist=False, cascade='all, delete-orphan', lazy=True)
+
+

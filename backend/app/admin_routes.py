@@ -138,43 +138,6 @@ def admin_add_quiz(cert_id):
         'answer': answer
     }), 201
 
-@admin_bp.route('/lessons-and-subparts', methods=['GET'])
-@login_required
-def get_lessons_and_subparts():
-    certifications = Certification.query.all()
-    result = []
-    
-    for cert in certifications:
-        lessons = Lesson.query.filter_by(certification_id=cert.id).all()
-        cert_data = {
-            'id': cert.id,
-            'name': cert.name,  # Assuming Certification has a 'name' field
-            'booked_by_user': cert in current_user.certifications,
-            'lessons': []
-        }
-        
-        for lesson in lessons:
-            subparts = Subpart.query.filter_by(lesson_id=lesson.id).all()
-            lesson_data = {
-                'id': lesson.id,
-                'title': lesson.title,
-                'completed': lesson.completed,
-                'subparts': [
-                    {
-                        'id': subpart.id,
-                        'title': subpart.title,
-                        'duration': subpart.duration,
-                        'videoId': subpart.video_id,  # Assuming Subpart has a 'video_id' field
-                        'completed': subpart.completed,
-                        'isQuiz': subpart.is_quiz
-                    } for subpart in subparts
-                ]
-            }
-            cert_data['lessons'].append(lesson_data)
-        
-        result.append(cert_data)
-    
-    return jsonify(result), 200
  
 @admin_bp.route('/api/certifications/by-name', methods=['GET'])
 @login_required
@@ -225,38 +188,6 @@ def admin_add_lab_guide(cert_id):
           else:
               return jsonify({'error': 'Upload to S3 failed'}), 500
       return jsonify({'error': 'Invalid file type. Only PDF, MP4, or MOV allowed'}), 400
-
-# add video
-@admin_bp.route('/admin/certifications/<int:cert_id>/video', methods=['POST'])
-@login_required
-@admin_required
-def admin_add_video(cert_id):
-       cert = Certification.query.get(cert_id)
-       if not cert:
-           return jsonify({'error': 'Certification not found'}), 404
-
-       if 'file' not in request.files:
-           return jsonify({'error': 'No file part'}), 400
-
-       file = request.files['file']
-       if file.filename == '':
-           return jsonify({'error': 'No selected file'}), 400
-
-       if file and allowed_file(file.filename):
-           filename = secure_filename(file.filename)
-           object_key = f"videos/{cert_id}/{filename}"
-           bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
-
-           if upload_fileobj(file, bucket_name, object_key):
-               video = Video(cert_id=cert_id, object_key=object_key, title=filename)
-               db.session.add(video)
-               db.session.commit()
-
-               url = generate_presigned_url(bucket_name, object_key)
-               return jsonify({'id': video.id, 'cert_id': cert_id, 'title': filename, 'url': url}), 201
-           else:
-               return jsonify({'error': 'Upload to S3 failed'}), 500
-       return jsonify({'error': 'Invalid file type. Only PDF, MP4, or MOV allowed'}), 400
 
 # Edit quiz
 @admin_bp.route('/admin/certifications/<int:cert_id>/quiz/<int:quiz_id>', methods=['PUT'])
@@ -374,15 +305,16 @@ def admin_delete_video(cert_id, video_id):
     if not video:
         return jsonify({'error': 'Video not found'}), 404
 
-    # Delete the file from S3
-    bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
-    if video.object_key and not delete_s3_object(bucket_name, video.object_key):
-        return jsonify({'error': 'Failed to delete S3 object'}), 500
+    # Optionally delete from S3
+    try:
+        delete_s3_object(os.getenv('S3_BUCKET_NAME'), video.object_key)
+    except Exception as e:
+        current_app.logger.warning(f"Failed to delete video from S3: {str(e)}")
 
-    # Delete the database record
     db.session.delete(video)
     db.session.commit()
     return jsonify({'message': 'Video deleted successfully'}), 200
+
 
 #Add subpart 
 @admin_bp.route('/admin/subparts', methods=['POST'])
@@ -426,18 +358,22 @@ def get_lab_guide(cert_id):
       url = generate_presigned_url(bucket_name, lab_guide.object_key)
       return jsonify({'id': lab_guide.id, 'cert_id': cert_id, 'pdf_url': url}), 200
 #get video
-@admin_bp.route('/admin/certifications/<int:cert_id>/video', methods=['GET'])
+@admin_bp.route('/admin/subparts/<int:subpart_id>/video', methods=['GET'])
 @login_required
 @admin_required
-def get_video(cert_id):
-    video = Video.query.filter_by(cert_id=cert_id).first()
-    print(f"Video query result: {video}")  
+def get_video(subpart_id):
+    video = Video.query.filter_by(subpart_id=subpart_id).first()
     if not video or not video.object_key:
         return jsonify({'error': 'Video not found'}), 404
 
     bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
     url = generate_presigned_url(bucket_name, video.object_key)
-    return jsonify({'id': video.id, 'cert_id': cert_id, 'title': video.title, 'url': url}), 200
+    return jsonify({
+        'id': video.id,
+        'subpart_id': subpart_id,
+        'title': video.title,
+        'url': url
+    }), 200
 #delete lab guide
 @admin_bp.route('/admin/certifications/<int:cert_id>/lab/<int:lab_id>', methods=['DELETE'])
 @login_required
@@ -456,3 +392,81 @@ def admin_delete_lab_guide(cert_id, lab_id):
     db.session.delete(lab_guide)
     db.session.commit()
     return jsonify({'message': 'Lab guide deleted successfully'}), 200
+
+###
+
+@admin_bp.route('/admin/subparts/<int:subpart_id>/video', methods=['POST'])
+@login_required
+@admin_required
+def admin_add_video(subpart_id):
+    subpart = Subpart.query.get(subpart_id)
+    if not subpart:
+        return jsonify({'error': 'Subpart not found'}), 404
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        object_key = f"videos/{subpart_id}/{filename}"
+        bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
+
+        if upload_fileobj(file, bucket_name, object_key):
+            video = Video(subpart_id=subpart_id, object_key=object_key, title=filename)
+            db.session.add(video)
+            db.session.commit()
+
+            url = generate_presigned_url(bucket_name, object_key)
+            return jsonify({
+                'id': video.id,
+                'subpart_id': subpart_id,
+                'title': filename,
+                'url': url
+            }), 201
+        else:
+            return jsonify({'error': 'Upload to S3 failed'}), 500
+    return jsonify({'error': 'Invalid file type. Only PDF, MP4, or MOV allowed'}), 400
+
+
+
+@admin_bp.route('/lessons-and-subparts', methods=['GET'])
+@login_required
+def get_lessons_and_subparts():
+    certifications = Certification.query.all()
+    result = []
+
+    for cert in certifications:
+        lessons = Lesson.query.filter_by(certification_id=cert.id).all()
+        cert_data = {
+            'id': cert.id,
+            'name': cert.name,
+            'booked_by_user': cert in current_user.certifications,
+            'lessons': []
+        }
+
+        for lesson in lessons:
+            subparts = Subpart.query.filter_by(lesson_id=lesson.id).all()
+            lesson_data = {
+                'id': lesson.id,
+                'title': lesson.title,
+                'completed': lesson.completed,
+                'subparts': [
+                    {
+                        'id': subpart.id,
+                        'title': subpart.title,
+                        'duration': subpart.duration,
+                        'videoId': subpart.video.id if subpart.video else None,  
+                        'completed': subpart.completed,
+                        'isQuiz': subpart.is_quiz
+                    } for subpart in subparts
+                ]
+            }
+            cert_data['lessons'].append(lesson_data)
+
+        result.append(cert_data)
+
+    return jsonify(result), 200
