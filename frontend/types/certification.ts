@@ -1,39 +1,32 @@
-// frontend/types/certification.ts
 export interface Subpart {
-  id: string;
+  id: number;
   title: string;
   duration: string;
   completed: boolean;
   isQuiz: boolean;
-  videoUrl: string; // Mandatory
-  videoId?: string;
-  labGuideUrl: string | null; // Optional
-  labGuideId?: string;
+  videoUrl?: string | null;
+  videoId?: number | null;
+  labGuideUrl?: string | null;
+  labGuideId?: number | null;
 }
+
 export interface Lesson {
-  id: string;
+  id: number;
   title: string;
   subparts: Subpart[];
   completed: boolean;
-  certificationId?: string;
+  certificationId?: number;
 }
 
 export interface Certification {
-  id: string;
-  name: string;
-  lessons: Lesson[];
-  videoUrl?: string | null;
-  labGuideUrl?: string | null;
-  videoId?: string | null;
-  labId?: string | null;
-}
-
-export interface Certification {
-  id: string;
+  id: number;
   name: string;
   booked_by_user: boolean;
   lessons: Lesson[];
+  videoUrl?: string | null;
+  labId?: number | null;
 }
+
 export type AdminAction =
   | { type: 'add-certification'; targetType: 'certification'; targetId?: string }
   | { type: 'add-video'; targetType: 'certification'; targetId: string }

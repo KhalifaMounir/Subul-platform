@@ -1,6 +1,5 @@
-import { ViewType } from '@/utils/types'
-import { quizActions } from '@/utils/actions'
-import styles from '@/styles/Modal.module.css'
+import { ViewType } from '@/utils/types';
+import styles from '@/styles/Modal.module.css';
 
 interface ResultsModalProps {
   onClose: () => void;
@@ -10,9 +9,8 @@ interface ResultsModalProps {
   courseId: string | string[];
   showView: (view: ViewType | string) => void;
 }
-// ...other import
-// ...rest of ResultsModal component
-export default function ResultsModal({ showView }: ResultsModalProps) {
+
+export default function ResultsModal({ onClose, onRetake, onGetCertificate, score, courseId, showView }: ResultsModalProps) {
   return (
     <div className={styles.modal}>
       <div className={styles.modalContent}>
@@ -22,32 +20,33 @@ export default function ResultsModal({ showView }: ResultsModalProps) {
         <div className={styles.resultsBody}>
           <div className={styles.scoreDisplay}>
             <div className={styles.scoreCircle}>
-              <span>0%</span>
+              <span>{score}%</span>
             </div>
-            <h3>عمل رائع!</h3>
-            <p></p>
+            <h3>{score >= 70 ? 'عمل رائع! لقد نجحت' : 'للأسف، لم تنجح'}</h3>
+            <p>
+              {score >= 70
+                ? 'لقد أكملت الاختبار بنجاح'
+                : 'تحتاج إلى 70% على الأقل للنجاح. حاول مرة أخرى'}
+            </p>
           </div>
           <div className={styles.resultsActions}>
             <button className={styles.btnPrimary} onClick={() => showView('dashboard')}>
               متابعة التعلم
             </button>
-            <button className={styles.btnSecondary} onClick={quizActions.retakeQuiz}>
+            <button className={styles.btnSecondary} onClick={onRetake}>
               إعادة الاختبار
             </button>
-            <button
-              className={styles.btnSuccess}
-              onClick={() => {
-                quizActions.getCertificate()
-                showView('certificate')
-              }}
-              style={{ display: 'none' }}
-            >
-              <i className="fas fa-certificate"></i>
-              احصل على الشهادة
-            </button>
+            {score >= 70 && (
+              <button
+                className={styles.btnSuccess}
+                onClick={() => onGetCertificate(courseId)}
+              >
+                <i className="fas fa-certificate"></i> احصل على الشهادة
+              </button>
+            )}
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

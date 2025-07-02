@@ -1,144 +1,183 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import QuizModal from './QuizModal';
-import styles from '@/styles/Course.module.css';
+"use client";
 
-export default function Course({ certId }) {
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import QuizModal from "./QuizModal";
+import styles from "@/styles/Course.module.css";
+import Header from "@/components/HomeHeader";
+
+interface Subpart {
+  id: number;
+  title: string;
+  duration: string;
+  videoUrl: string | null;
+  completed: boolean;
+  isQuiz: boolean;
+  videoId?: number;
+}
+
+interface Lesson {
+  id: number;
+  title: string;
+  completed: boolean;
+  subparts: Subpart[];
+}
+
+interface LabGuide {
+  id: number;
+  pdf_url: string;
+}
+
+interface CourseProps {
+  certId?: string | null; // Added certId as an optional prop
+}
+
+export default function Course({ certId }: CourseProps) {
   const router = useRouter();
-  const [currentLesson, setCurrentLesson] = useState(null);
-  const [currentSubpart, setCurrentSubpart] = useState(null);
+  const searchParams = useSearchParams();
+  const certIdFromParams = searchParams.get("cert_id") || certId; // Fallback to prop if param is missing
+  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
+  const [currentSubpart, setCurrentSubpart] = useState<Subpart & { lessonId: number; lessonTitle: string } | null>(null);
   const [videoError, setVideoError] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showQuizModal, setShowQuizModal] = useState(false);
-  const [expandedLessons, setExpandedLessons] = useState({});
-  const [lessons, setLessons] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [expandedLessons, setExpandedLessons] = useState<{ [key: number]: boolean }>({});
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [labGuide, setLabGuide] = useState<LabGuide | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch lessons and subparts from API
   useEffect(() => {
-    const fetchLessons = async () => {
+    if (!certIdFromParams) {
+      setError("معرف الدورة غير متوفر");
+      setIsLoading(false);
+      router.push("/dashboard");
+      return;
+    }
+
+    const fetchData = async () => {
       try {
-        setLoading(true);
-        const response = await fetch(`http://localhost:5000/certifications/${certId}/lessons`, {
-          credentials: 'include', // Include cookies for authentication
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch lessons');
+        setIsLoading(true);
+        const [lessonsResponse, labResponse] = await Promise.all([
+          fetch(`http://localhost:5000/certifications/${certIdFromParams}/lessons`, {
+            method: "GET",
+            credentials: "include",
+          }),
+          fetch(`http://localhost:5000/lab/${certIdFromParams}`, {
+            method: "GET",
+            credentials: "include",
+          }),
+        ]);
+        if (!lessonsResponse.ok) {
+          if (lessonsResponse.status === 401 || lessonsResponse.status === 403) {
+            router.push("/");
+            return;
+          }
+          throw new Error("فشل جلب الدروس");
         }
-        const data = await response.json();
-        setLessons(data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
+        const lessonsData = await lessonsResponse.json();
+        setLessons(lessonsData);
+        setError(null);
+
+        if (labResponse.ok) {
+          const labData = await labResponse.json();
+          setLabGuide(labData);
+        } else {
+          setLabGuide(null);
+        }
+      } catch (err: any) {
+        setError(`تعذر تحميل الدروس: ${err.message}`);
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchLessons();
-  }, [certId]);
 
-  // Calculate and save progress
-  const calculateProgress = () => {
-    const totalSubparts = lessons.flatMap(lesson => lesson.subparts).length;
-    const completedSubparts = lessons.flatMap(lesson => lesson.subparts).filter(subpart => subpart.completed).length;
-    const newProgress = totalSubparts ? Math.round((completedSubparts / totalSubparts) * 100) : 0;
-    setProgress(newProgress);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(`progress-cert-${certId}`, newProgress.toString());
-      console.log(`Saved progress-cert-${certId}: ${newProgress}%`);
+    fetchData();
+  }, [certIdFromParams, router]);
+
+  useEffect(() => {
+    const firstIncompleteSubpart = lessons
+      .flatMap((lesson) =>
+        lesson.subparts.map((subpart) => ({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title }))
+      )
+      .find((subpart) => !subpart.completed);
+    if (firstIncompleteSubpart) {
+      const lesson = lessons.find((l) => l.id === firstIncompleteSubpart.lessonId);
+      setCurrentLesson(lesson);
+      setCurrentSubpart(firstIncompleteSubpart);
+      setExpandedLessons((prev) => ({ ...prev, [firstIncompleteSubpart.lessonId]: true }));
     }
+  }, [lessons]);
+
+  const calculateProgress = () => {
+    const totalSubparts = lessons.flatMap((lesson) => lesson.subparts).length;
+    const completedSubparts = lessons
+      .flatMap((lesson) => lesson.subparts)
+      .filter((subpart) => subpart.completed).length;
+    const newProgress = totalSubparts > 0 ? Math.round((completedSubparts / totalSubparts) * 100) : 0;
+    setProgress(newProgress);
     return newProgress;
   };
 
-  // Calculate progress when lessons change
   useEffect(() => {
-    if (lessons.length > 0) {
-      calculateProgress();
-    }
+    calculateProgress();
   }, [lessons]);
 
-  // Load first incomplete subpart by default
-  useEffect(() => {
-    if (lessons.length > 0) {
-      const firstIncompleteSubpart = lessons
-        .flatMap(lesson => lesson.subparts.map(subpart => ({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title })))
-        .find(subpart => !subpart.completed);
-      
-      if (firstIncompleteSubpart) {
-        const lesson = lessons.find(l => l.id === firstIncompleteSubpart.lessonId);
-        setCurrentLesson(lesson);
-        setCurrentSubpart(firstIncompleteSubpart);
-        setExpandedLessons(prev => ({ ...prev, [firstIncompleteSubpart.lessonId]: true }));
-      }
-    }
-  }, [lessons]);
-
-  const handleSubpartClick = (subpart, lesson) => {
+  const handleSubpartClick = (subpart: Subpart, lesson: Lesson) => {
     setCurrentLesson(lesson);
     setCurrentSubpart({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title });
     setVideoError(false);
   };
 
-  const markSubpartCompleted = async (subpartId) => {
+  const markSubpartCompleted = async (subpartId: number) => {
     try {
       const response = await fetch(`http://localhost:5000/subparts/${subpartId}/complete`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
       });
-      if (!response.ok) {
-        throw new Error('Failed to mark subpart as completed');
+      if (response.ok) {
+        setLessons((prevLessons) =>
+          prevLessons.map((lesson) =>
+            lesson.subparts.some((s) => s.id === subpartId)
+              ? {
+                  ...lesson,
+                  subparts: lesson.subparts.map((s) =>
+                    s.id === subpartId ? { ...s, completed: true } : s
+                  ),
+                  completed: lesson.subparts.every((s) => (s.id === subpartId ? true : s.completed)),
+                }
+              : lesson
+          )
+        );
       }
-      setLessons(prevLessons =>
-        prevLessons.map(lesson =>
-          lesson.subparts.some(subpart => subpart.id === subpartId)
-            ? {
-                ...lesson,
-                subparts: lesson.subparts.map(subpart =>
-                  subpart.id === subpartId ? { ...subpart, completed: true } : subpart
-                ),
-                completed: lesson.subparts.every(subpart => subpart.id === subpartId ? true : subpart.completed)
-              }
-            : lesson
-        )
-      );
     } catch (err) {
-      console.error('Error marking subpart as completed:', err);
+      console.error("Error marking subpart completed:", err);
     }
   };
 
-  const handleNextSubpart = () => {
+  const handleNextSubpart = async () => {
     if (!currentSubpart || !currentLesson) return;
 
-    if (!currentSubpart.isQuiz) {
-      markSubpartCompleted(currentSubpart.id);
-    }
+    await markSubpartCompleted(currentSubpart.id);
 
-    const allSubparts = lessons.flatMap(lesson =>
-      lesson.subparts.map(subpart => ({
-        ...subpart,
-        lessonId: lesson.id,
-        lessonTitle: lesson.title
-      }))
+    const allSubparts = lessons.flatMap((lesson) =>
+      lesson.subparts.map((subpart) => ({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title }))
     );
-    
-    const currentIndex = allSubparts.findIndex(
-      item => item.id === currentSubpart.id
-    );
-    
+    const currentIndex = allSubparts.findIndex((item) => item.id === currentSubpart.id);
     if (currentIndex < allSubparts.length - 1) {
       const next = allSubparts[currentIndex + 1];
-      const nextLesson = lessons.find(l => l.id === next.lessonId);
+      const nextLesson = lessons.find((l) => l.id === next.lessonId);
       setCurrentLesson(nextLesson);
       setCurrentSubpart(next);
-      setExpandedLessons(prev => ({ ...prev, [next.lessonId]: true }));
+      setExpandedLessons((prev) => ({ ...prev, [next.lessonId]: true }));
       setVideoError(false);
     }
   };
 
   const hasNextSubpart = () => {
     if (!currentSubpart) return false;
-    const allSubparts = lessons.flatMap(lesson => lesson.subparts);
-    const currentIndex = allSubparts.findIndex(s => s.id === currentSubpart.id);
+    const allSubparts = lessons.flatMap((lesson) => lesson.subparts);
+    const currentIndex = allSubparts.findIndex((s) => s.id === currentSubpart.id);
     return currentIndex < allSubparts.length - 1;
   };
 
@@ -150,33 +189,27 @@ export default function Course({ certId }) {
     setShowQuizModal(false);
   };
 
-  const toggleLesson = (lessonId) => {
-    setExpandedLessons(prev => ({
-      ...prev,
-      [lessonId]: !prev[lessonId]
-    }));
+  const handleViewLab = () => {
+    if (labGuide?.pdf_url) {
+      window.open(labGuide.pdf_url, "_blank");
+    }
   };
 
-  const isQuizLesson = currentSubpart?.isQuiz;
+  const toggleLesson = (lessonId: number) => {
+    setExpandedLessons((prev) => ({ ...prev, [lessonId]: !prev[lessonId] }));
+  };
 
-  if (loading) {
-    return <div>Loading lessons...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  if (isLoading) return <div className={styles.view}>جاري تحميل الدورة...</div>;
+  if (error) return <div className={styles.view}>{error}</div>;
 
   return (
     <>
       <div className={`${styles.view} ${styles.active}`}>
         <div className={styles.courseContainer}>
           <div className={styles.courseSidebar}>
-            <button className={styles.backBtn} onClick={() => router.push('/dashboard')}>
-              <i className="fas fa-arrow-right"></i>
-              العودة للدورات
+            <button className={styles.backBtn} onClick={() => router.push("/dashboard")}>
+              <i className="fas fa-arrow-right"></i> العودة للدورات
             </button>
-
             <div className={styles.courseInfo}>
               <h3>Microsoft Azure Fundamentals (AZ-900)</h3>
               <div className={styles.progressBar}>
@@ -184,9 +217,8 @@ export default function Course({ certId }) {
               </div>
               <span>{progress}% مكتمل</span>
             </div>
-
             <div className={styles.lessonsList}>
-              {lessons.map((lesson, index) => (
+              {lessons.map((lesson) => (
                 <div key={lesson.id} className={styles.lessonItem}>
                   <div
                     className={styles.lessonHeader}
@@ -195,24 +227,32 @@ export default function Course({ certId }) {
                     aria-expanded={expandedLessons[lesson.id] || false}
                     aria-controls={`subparts-${lesson.id}`}
                   >
-                    <i className={`fas ${lesson.completed ? 'fa-check-circle' : 'fa-circle'}`}></i>
+                    <i className={`fas ${lesson.completed ? "fa-check-circle" : "fa-circle"}`}></i>
                     <h4>{lesson.title}</h4>
-                    <i className={`fas ${expandedLessons[lesson.id] ? 'fa-chevron-down' : 'fa-chevron-right'} ${styles.toggleIcon}`}></i>
+                    <i
+                      className={`fas ${expandedLessons[lesson.id] ? "fa-chevron-down" : "fa-chevron-right"} ${
+                        styles.toggleIcon
+                      }`}
+                    ></i>
                   </div>
                   {expandedLessons[lesson.id] && (
                     <ul id={`subparts-${lesson.id}`}>
-                      {lesson.subparts.map((subpart, subIndex) => (
+                      {lesson.subparts.map((subpart) => (
                         <li
                           key={subpart.id}
-                          className={`${styles.subpartItem} ${currentSubpart?.id === subpart.id ? styles.active : ''}`}
+                          className={`${styles.subpartItem} ${currentSubpart?.id === subpart.id ? styles.active : ""}`}
                           onClick={() => handleSubpartClick(subpart, lesson)}
                         >
                           <div className={styles.subpartContent}>
-                            <i className={`fas ${
-                              subpart.completed ? 'fa-check-circle' :
-                              subpart.isQuiz ? 'fa-question-circle' :
-                              'fa-play-circle'
-                            }`}></i>
+                            <i
+                              className={`fas ${
+                                subpart.completed
+                                  ? "fa-check-circle"
+                                  : subpart.isQuiz
+                                  ? "fa-question-circle"
+                                  : "fa-play-circle"
+                              }`}
+                            ></i>
                             <div className={styles.subpartInfo}>
                               <span className={styles.subpartTitle}>{subpart.title}</span>
                               <span className={styles.subpartDuration}>{subpart.duration}</span>
@@ -226,10 +266,9 @@ export default function Course({ certId }) {
               ))}
             </div>
           </div>
-
           <div className={styles.courseContent}>
             <div className={styles.videoPlayer}>
-              {currentSubpart && !isQuizLesson && currentSubpart.videoUrl ? (
+              {currentSubpart && currentSubpart.videoUrl ? (
                 videoError ? (
                   <div className={styles.videoPlaceholder}>
                     <i className="fas fa-exclamation-triangle"></i>
@@ -243,8 +282,8 @@ export default function Course({ certId }) {
                     key={currentSubpart.id}
                     onError={() => setVideoError(true)}
                     onLoadStart={() => setVideoError(false)}
-                    onPlay={() => console.log(`Video started: ${currentSubpart.title} at`, new Date().toLocaleString('en-US', { timeZone: 'UTC' }))}
-                    onEnded={() => console.log(`Video ended: ${currentSubpart.title} at`, new Date().toLocaleString('en-US', { timeZone: 'UTC' }))}
+                    onPlay={() => console.log(`Video started: ${currentSubpart.title}`)}
+                    onEnded={() => console.log(`Video ended: ${currentSubpart.title}`)}
                   >
                     <source src={currentSubpart.videoUrl} type="video/mp4" />
                     متصفحك لا يدعم تشغيل الفيديو.
@@ -253,39 +292,33 @@ export default function Course({ certId }) {
               ) : (
                 <div className={styles.videoPlaceholder}>
                   <i className="fas fa-play"></i>
-                  <p>{currentSubpart ? currentSubpart.title : 'اختر درساً لبدء التعلم'}</p>
-                  {currentSubpart && !currentSubpart.videoUrl && !isQuizLesson && (
+                  <p>{currentSubpart ? currentSubpart.title : "اختر درساً لبدء التعلم"}</p>
+                  {currentSubpart && !currentSubpart.videoUrl && (
                     <small>لا يوجد فيديو متاح لهذا الدرس</small>
                   )}
                 </div>
               )}
             </div>
-
             <div className={styles.lessonContent}>
-              <h2>{currentSubpart ? currentSubpart.title : 'مرحباً بك في الدورة'}</h2>
+              <h2>{currentSubpart ? currentSubpart.title : "مرحباً بك في الدورة"}</h2>
               <p>
                 {currentSubpart
                   ? `تعلم ${currentSubpart.title} في ${currentSubpart.duration}. هذا الدرس جزء من رحلتك لتطوير مهاراتك في Microsoft Azure.`
-                  : 'اختر درساً من الشريط الجانبي لبدء رحلة التعلم.'
-                }
+                  : "اختر درساً من الشريط الجانبي لبدء رحلة التعلم."}
               </p>
-
               <div className={styles.lessonActions}>
-                {isQuizLesson && currentSubpart && (
-                  <button
-                    className={styles.btnPrimary}
-                    onClick={handleStartQuiz}
-                  >
-                    <i className="fas fa-question-circle"></i>
-                    خذ الاختبار
+                {currentSubpart?.isQuiz && (
+                  <button className={styles.btnPrimary} onClick={handleStartQuiz}>
+                    <i className="fas fa-question-circle"></i> خذ الاختبار
                   </button>
                 )}
-
+                {labGuide && (
+                  <button className={styles.btnPrimary} onClick={handleViewLab} style={{ marginLeft: "10px" }}>
+                    <i className="fas fa-flask"></i> عرض المختبر
+                  </button>
+                )}
                 {hasNextSubpart() && (
-                  <button
-                    className={styles.btnSecondary}
-                    onClick={handleNextSubpart}
-                  >
+                  <button className={styles.btnSecondary} onClick={handleNextSubpart}>
                     الدرس التالي
                     <i className="fas fa-arrow-left"></i>
                   </button>
@@ -295,10 +328,7 @@ export default function Course({ certId }) {
           </div>
         </div>
       </div>
-
-      {showQuizModal && (
-        <QuizModal onClose={handleCloseQuiz} certId={certId} />
-      )}
+      {showQuizModal && <QuizModal onClose={handleCloseQuiz} certId={certIdFromParams} />}
     </>
   );
 }

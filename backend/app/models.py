@@ -38,18 +38,12 @@ class Certification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     lessons = db.relationship('Lesson', backref='certification', lazy=True , cascade='all, delete-orphan')
-    quizzes = db.relationship(
-        'Quiz',
-        backref='certification',
-        lazy=True,
-        cascade='all, delete-orphan'
-    )
 
     description=db.Column('description', db.String(255))
 
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id', ondelete='CASCADE'), nullable=False)
+    subpart_id = db.Column(db.Integer, db.ForeignKey('subpart.id', ondelete='CASCADE'), nullable=True)
     question = db.Column(db.String(256))
     options = db.Column(db.JSON)
     answer = db.Column(db.String(128))
@@ -64,7 +58,7 @@ class Job(db.Model):
 
 class LabGuide(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    cert_id = db.Column(db.Integer, db.ForeignKey('certification.id'))
+    subpart_id = db.Column(db.Integer, db.ForeignKey('subpart.id', ondelete='CASCADE'), nullable=True)   
     object_key = db.Column(db.String(255))
 
     @property

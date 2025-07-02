@@ -10,12 +10,10 @@ export default function App({ Component, pageProps }: AppProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'profile'>('home');
 
-  // Check login status on mount
   useEffect(() => {
     const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
     setIsLoggedIn(loggedIn);
 
-    // Optionally, verify session with backend
     const verifySession = async () => {
       try {
         const response = await fetch('http://localhost:5000/dashboard', {
@@ -24,9 +22,11 @@ export default function App({ Component, pageProps }: AppProps) {
         if (!response.ok) {
           localStorage.removeItem('isLoggedIn');
           setIsLoggedIn(false);
-          if (router.pathname !== '/') {
+          if (router.pathname !== '/' && !router.pathname.startsWith('/admin')) {
             router.push('/');
           }
+        } else {
+          setIsLoggedIn(true);
         }
       } catch (error) {
         console.error('Session verification failed:', error);
@@ -36,7 +36,7 @@ export default function App({ Component, pageProps }: AppProps) {
   }, [router.pathname]);
 
   const handleLogin = () => {
-    router.push('/'); // Show home page with login modal
+    router.push('/');
   };
 
   const handleLogout = () => {
@@ -45,15 +45,13 @@ export default function App({ Component, pageProps }: AppProps) {
     fetch('http://localhost:5000/logout', {
       method: 'POST',
       credentials: 'include',
-    }).then(() => {
-      router.push('/');
-    });
+    }).then(() => router.push('/'));
   };
 
   const isAdminRoute = router.pathname.startsWith('/admin');
   const isHomePage = router.pathname === '/';
   const isCoursePage = router.pathname.startsWith('/course');
-  const showHeader = !isAdminRoute && !isHomePage && !isCoursePage;
+  const showHeader = !isAdminRoute && !isHomePage ;
 
   return (
     <>
@@ -62,12 +60,8 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="description" content="منصة سبل للتعلم الإلكتروني التفاعلي" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-        />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
       </Head>
-
       {showHeader && (
         <Header
           isLoggedIn={isLoggedIn}
@@ -77,7 +71,6 @@ export default function App({ Component, pageProps }: AppProps) {
           setCurrentPage={setCurrentPage}
         />
       )}
-
       <Component {...pageProps} isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
     </>
   );

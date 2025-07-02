@@ -110,11 +110,11 @@ def admin_add_certification():
 
 
 # Add quiz to certification
-@admin_bp.route('/admin/certifications/<int:cert_id>/quiz', methods=['POST'])
+@admin_bp.route('/admin/certifications/<int:subpart_id>/quiz', methods=['POST'])
 @login_required
 @admin_required
-def admin_add_quiz(cert_id):
-    cert = Certification.query.get(cert_id)
+def admin_add_quiz(subpart_id):
+    cert = Certification.query.get(subpart_id)
     if not cert:
         return jsonify({'error': 'Certification not found'}), 404
 
@@ -126,13 +126,13 @@ def admin_add_quiz(cert_id):
     if not question or not options or not answer:
         return jsonify({'error': 'Question, options, and answer required'}), 400
 
-    quiz = Quiz(cert_id=cert_id, question=question, options=options, answer=answer)
+    quiz = Quiz(subpart_id=subpart_id, question=question, options=options, answer=answer)
     db.session.add(quiz)
     db.session.commit()
 
     return jsonify({
         'id': quiz.id,
-        'cert_id': cert_id,
+        'subpart_id': subpart_id,
         'question': question,
         'options': options,
         'answer': answer
@@ -154,11 +154,11 @@ def get_cert_id_by_name():
     return jsonify({'cert_id': cert.id}), 200
 
 # add lab guide
-@admin_bp.route('/admin/certifications/<int:cert_id>/lab', methods=['POST'])
+@admin_bp.route('/admin/certifications/<int:subpart_id>/lab', methods=['POST'])
 @login_required
 @admin_required
-def admin_add_lab_guide(cert_id):
-      cert = Certification.query.get(cert_id)
+def admin_add_lab_guide(subpart_id):
+      cert = Certification.query.get(subpart_id)
       if not cert:
           return jsonify({'error': 'Certification not found'}), 404
 
@@ -171,30 +171,30 @@ def admin_add_lab_guide(cert_id):
 
       if file and allowed_file(file.filename):
           filename = secure_filename(file.filename)
-          object_key = f"lab_guides/{cert_id}/{filename}"
+          object_key = f"lab_guides/{subpart_id}/{filename}"
           bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
 
           if upload_fileobj(file, bucket_name, object_key):
-              lab_guide = LabGuide.query.filter_by(cert_id=cert_id).first()
+              lab_guide = LabGuide.query.filter_by(subpart_id=subpart_id).first()
               if not lab_guide:
-                  lab_guide = LabGuide(cert_id=cert_id)
+                  lab_guide = LabGuide(subpart_id=subpart_id)
                   db.session.add(lab_guide)
 
               lab_guide.object_key = object_key
               db.session.commit()
 
               url = generate_presigned_url(bucket_name, object_key)
-              return jsonify({'id': lab_guide.id, 'cert_id': cert_id, 'pdf_url': url}), 201
+              return jsonify({'id': lab_guide.id, 'subpart_id': subpart_id, 'pdf_url': url}), 201
           else:
               return jsonify({'error': 'Upload to S3 failed'}), 500
       return jsonify({'error': 'Invalid file type. Only PDF, MP4, or MOV allowed'}), 400
 
 # Edit quiz
-@admin_bp.route('/admin/certifications/<int:cert_id>/quiz/<int:quiz_id>', methods=['PUT'])
+@admin_bp.route('/admin/certifications/<int:subpart_id>/quiz/<int:quiz_id>', methods=['PUT'])
 @login_required
 @admin_required
-def admin_edit_quiz(cert_id, quiz_id):
-    quiz = Quiz.query.filter_by(id=quiz_id, cert_id=cert_id).first()
+def admin_edit_quiz(subpart_id, quiz_id):
+    quiz = Quiz.query.filter_by(id=quiz_id, subpart_id=subpart_id).first()
     if not quiz:
         return jsonify({'error': 'Quiz not found'}), 404
 
@@ -213,7 +213,7 @@ def admin_edit_quiz(cert_id, quiz_id):
 
     return jsonify({
         'id': quiz.id,
-        'cert_id': cert_id,
+        'subpart_id': subpart_id,
         'question': question,
         'options': options,
         'answer': answer
@@ -282,11 +282,11 @@ def admin_delete_certification(cert_id):
     return jsonify({'message': 'Certification deleted successfully'}), 200
 
 # Delete quiz
-@admin_bp.route('/admin/certifications/<int:cert_id>/quiz/<int:quiz_id>', methods=['DELETE'])
+@admin_bp.route('/admin/certifications/<int:subpart_id>/quiz/<int:quiz_id>', methods=['DELETE'])
 @login_required
 @admin_required
-def admin_delete_quiz(cert_id, quiz_id):
-    quiz = Quiz.query.filter_by(id=quiz_id, cert_id=cert_id).first()
+def admin_delete_quiz(subpart_id, quiz_id):
+    quiz = Quiz.query.filter_by(id=quiz_id, subpart_id=subpart_id).first()
     if not quiz:
         return jsonify({'error': 'Quiz not found'}), 404
 
@@ -297,11 +297,11 @@ def admin_delete_quiz(cert_id, quiz_id):
 
 
 # Delete video
-@admin_bp.route('/admin/certifications/<int:cert_id>/video/<int:video_id>', methods=['DELETE'])
+@admin_bp.route('/admin/certifications/<int:subpart_id>/video/<int:video_id>', methods=['DELETE'])
 @login_required
 @admin_required
-def admin_delete_video(cert_id, video_id):
-    video = Video.query.filter_by(id=video_id, cert_id=cert_id).first()
+def admin_delete_video(subpart_id, video_id):
+    video = Video.query.filter_by(id=video_id, subpart_id=subpart_id).first()
     if not video:
         return jsonify({'error': 'Video not found'}), 404
 
@@ -346,17 +346,20 @@ def create_subpart():
     }), 201
 
 # Get lab guide
-@admin_bp.route('/admin/certifications/<int:cert_id>/lab', methods=['GET'])
+@admin_bp.route('/admin/certifications/<int:subpart_id>/lab', methods=['GET'])
 @login_required
 @admin_required
-def get_lab_guide(cert_id):
-      lab_guide = LabGuide.query.filter_by(cert_id=cert_id).first()
+def get_lab_guide(subpart_id):
+      lab_guide = LabGuide.query.filter_bysubpart_id=subpart_id.first()
       if not lab_guide or not lab_guide.object_key:
           return jsonify({'error': 'Lab guide not found'}), 404
 
       bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
       url = generate_presigned_url(bucket_name, lab_guide.object_key)
-      return jsonify({'id': lab_guide.id, 'cert_id': cert_id, 'pdf_url': url}), 200
+      return jsonify({'id': lab_guide.id, 'subpart_id': subpart_id, 'pdf_url': url}), 200
+
+
+
 #get video
 @admin_bp.route('/admin/subparts/<int:subpart_id>/video', methods=['GET'])
 @login_required

@@ -87,9 +87,10 @@ def get_lessons(cert_id):
                     'id': subpart.id,
                     'title': subpart.title,
                     'duration': subpart.duration,
-                    'videoUrl': subpart.video_url,
                     'completed': subpart.completed,
-                    'isQuiz': subpart.is_quiz
+                    'isQuiz': subpart.is_quiz,
+                    'videoId': subpart.video.id if subpart.video else None,
+                    'videoUrl': subpart.video.url if subpart.video else None
                 } for subpart in subparts
             ]
         })
@@ -108,10 +109,10 @@ def complete_subpart(subpart_id):
     db.session.commit()
     return jsonify({'message': 'Subpart marked as completed'}), 200
 
-@bp.route('/quiz/<int:cert_id>', methods=['GET'])
+@bp.route('/quiz/<int:subpart_id>', methods=['GET'])
 @login_required
-def get_quiz(cert_id):
-    quiz_items = Quiz.query.filter_by(cert_id=cert_id).all()
+def get_quiz(subpart_id):
+    quiz_items = Quiz.query.filter_by(subpart_id=subpart_id).all()
     return jsonify([
         {
             'id': q.id,
@@ -162,10 +163,10 @@ def submit_quiz_answer(quiz_id):
 
 #Route to Get Quiz Results for a User
 
-@bp.route('/quiz/results/<int:cert_id>', methods=['GET'])
+@bp.route('/quiz/results/<int:subpart_id>', methods=['GET'])
 @login_required
-def get_quiz_results(cert_id):
-    quizzes = Quiz.query.filter_by(cert_id=cert_id).all()
+def get_quiz_results(subpart_id):
+    quizzes = Quiz.query.filter_by(subpart_id=subpart_id).all()
     results = []
 
     for quiz in quizzes:
@@ -184,19 +185,19 @@ def get_quiz_results(cert_id):
 
 
 
-@bp.route('/lab/<int:cert_id>', methods=['GET'])
+@bp.route('/lab/<int:subpart_id>', methods=['GET'])
 @login_required
-def get_lab_guide(cert_id):
-    guide = LabGuide.query.filter_by(cert_id=cert_id).first()
+def get_lab_guide(subpart_id):
+    guide = LabGuide.query.filter_by(subpart_id=subpart_id).first()
     if guide:
         return jsonify({'id': guide.id, 'pdf_url': guide.pdf_url}), 200
     return jsonify({'message': 'Lab guide not found'}), 404
 
 
-@bp.route('/video/<int:cert_id>', methods=['GET'])
+@bp.route('/video/<int:subpart_id>', methods=['GET'])
 @login_required
-def get_video(cert_id):
-    videos = Video.query.filter_by(cert_id=cert_id).all()
+def get_video(subpart_id):
+    videos = Video.query.filter_by(subpart_id=subpart_id).all()
     return jsonify([
         {'id': v.id, 'title': v.title, 'url': v.url} for v in videos
     ]), 200
@@ -223,10 +224,10 @@ def get_jobs(cert_id):
 
 
 
-@bp.route('/quiz/<int:cert_id>', methods=['POST'])
+@bp.route('/quiz/<int:subpart_id>', methods=['POST'])
 @login_required
-def add_quiz(cert_id):
-    cert = Certification.query.get(cert_id)
+def add_quiz(subpart_id):
+    cert = Certification.query.get(subpart_id)
     if not cert:
         return jsonify({'error': 'Certification not found'}), 404
 
@@ -238,13 +239,13 @@ def add_quiz(cert_id):
     if not question or not options or not answer:
         return jsonify({'error': 'Question, options and answer required'}), 400
 
-    quiz = Quiz(cert_id=cert_id, question=question, options=options, answer=answer)
+    quiz = Quiz(subpart_id=subpart_id, question=question, options=options, answer=answer)
     db.session.add(quiz)
     db.session.commit()
 
     return jsonify({
         'id': quiz.id,
-        'cert_id': cert_id,
+        'subpart_id': subpart_id,
         'question': question,
         'options': options,
         'answer': answer
