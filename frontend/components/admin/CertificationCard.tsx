@@ -29,34 +29,35 @@ export default function CertificationCard({ certification, onAdminAction }: Cert
             <h3 className={styles.certificationTitle}>{certification.name}</h3>
           </div>
           <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              try {
-                const res = await fetch(`http://localhost:5000/admin/certifications/${certification.id}`, {
-                  method: 'DELETE',
-                  credentials: 'include',
-                  headers: { 'Content-Type': 'application/json' },
-                });
-                if (res.ok) {
-                  onAdminAction({
-                    type: 'delete-certification',
-                    targetId: certification.id,
-                    targetType: 'certification',
-                  });
-                } else {
-                  const data = await res.json();
-                  alert(data.error || 'فشل حذف الشهادة');
-                }
-              } catch (err) {
-                alert('حدث خطأ أثناء حذف الشهادة');
-              }
-            }}
-            className={`${styles.actionButton} ${styles.deleteButton}`}
-            aria-label={`حذف الشهادة ${certification.name}`}
-          >
-            <Trash2 size={14} />
-            حذف الشهادة
-          </button>
+  onClick={async (e) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`http://localhost:5000/admin/certifications/${certification.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        onAdminAction({
+          type: 'delete-certification',
+          targetId: certification.id,
+          targetType: 'certification',
+        });
+      } else {
+        const data = await res.json();
+        alert(data.error || 'فشل حذف الشهادة');
+      }
+    } catch (err) {
+      alert('حدث خطأ أثناء حذف الشهادة');
+    }
+  }}
+  className={`${styles.actionButton} ${styles.deleteButton}`}
+  aria-label={`حذف الشهادة ${certification.name}`}
+>
+  <Trash2 size={14} />
+  حذف الشهادة
+</button>
+
         </div>
       </div>
       {isExpanded && (

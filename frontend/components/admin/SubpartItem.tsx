@@ -68,72 +68,86 @@ export default function SubpartItem({ subpart, onAdminAction }: SubpartItemProps
       </div>
 
       {isExpanded && (
-        <div className={styles.expandedContent}>
-          <h5 className={styles.adminTitle}>إجراءات الإدارة</h5>
-          <div className={styles.actionsGrid}>
-            {subpart.videoUrl ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAdminAction('delete-video');
-                }}
-                className={`${styles.actionButton} ${styles.deleteVideoButton}`}
-              >
-                <Trash2 size={14} />
-                حذف الفيديو
-              </button>
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAdminAction('add-video');
-                }}
-                className={`${styles.actionButton} ${styles.addVideoButton}`}
-              >
-                <Video size={14} />
-                إضافة فيديو
-              </button>
-            )}
-            {subpart.labGuideUrl ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAdminAction('delete-lab-guide');
-                }}
-                className={`${styles.actionButton} ${styles.deleteLabGuideButton}`}
-              >
-                <Trash2 size={14} />
-                حذف دليل المختبر
-              </button>
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAdminAction('add-lab-guide');
-                }}
-                className={`${styles.actionButton} ${styles.addLabGuideButton}`}
-              >
-                <Upload size={14} />
-                إضافة دليل مختبر
-              </button>
-            )}
-          </div>
-          {subpart.videoUrl && (
-            <div className={styles.videoInfo}>
-              <p className={styles.videoInfoText}>
-                <strong>رابط الفيديو:</strong> {subpart.videoUrl}
-              </p>
-            </div>
-          )}
-          {subpart.labGuideUrl && (
-            <div className={styles.labGuideInfo}>
-              <p className={styles.labGuideInfoText}>
-                <strong>رابط دليل المختبر:</strong> {subpart.labGuideUrl}
-              </p>
-            </div>
-          )}
-        </div>
+  <div className={styles.expandedContent}>
+    <h5 className={styles.adminTitle}>إجراءات الإدارة</h5>
+    <div className={styles.actionsGrid}>
+      {subpart.videoUrl ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAdminAction('delete-video');
+          }}
+          className={`${styles.actionButton} ${styles.deleteVideoButton}`}
+        >
+          <Trash2 size={14} />
+          حذف الفيديو
+        </button>
+      ) : (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAdminAction('add-video');
+          }}
+          className={`${styles.actionButton} ${styles.addVideoButton}`}
+        >
+          <Video size={14} />
+          إضافة فيديو
+        </button>
       )}
+      {subpart.labGuideUrl ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAdminAction('delete-lab-guide');
+          }}
+          className={`${styles.actionButton} ${styles.deleteLabGuideButton}`}
+        >
+          <Trash2 size={14} />
+          حذف دليل المختبر
+        </button>
+      ) : (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAdminAction('add-lab-guide');
+          }}
+          className={`${styles.actionButton} ${styles.addLabGuideButton}`}
+        >
+          <Upload size={14} />
+          إضافة دليل مختبر
+        </button>
+      )}
+    </div>
+
+    {subpart.videoUrl && (
+      <div className={styles.videoPreview}>
+        <video
+          controls
+          src={subpart.videoUrl}
+          style={{ maxWidth: '100%', marginTop: '0.5rem' }}
+        />
+      </div>
+    )}
+
+    {subpart.labGuideUrl && (
+      <div className={styles.labGuideDownload}>
+        <a
+          href={subpart.labGuideUrl}
+          download
+          style={{
+            color: '#2563eb',
+            textDecoration: 'underline',
+            marginTop: '0.5rem',
+            display: 'inline-block'
+          }}
+        >
+          تحميل دليل المختبر
+        </a>
+      </div>
+    )}
+  </div>
+)}
+
     </div>
   );
 }

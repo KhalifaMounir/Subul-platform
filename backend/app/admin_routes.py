@@ -95,17 +95,35 @@ def admin_add_lesson():
 @admin_required
 def admin_add_certification():
     data = request.get_json()
-    name = data.get('name')
-    description = data.get('description')
-    if not name:
-        return jsonify({'error': 'Certification name required'}), 400
-    if not description:
-        return jsonify({'error': 'Certification description required'}), 400
+    if not data or 'name' not in data or not data['name'].strip():
+        return format_response({"error": "Name cannot be empty"}, status=400)
 
-    cert = Certification(name=name, description=description)
-    db.session.add(cert)
+    name = data['name'].strip()
+    price = data.get('price')
+    description = data.get('description')
+    image_url = data.get('image_url')
+    instructor = data.get('instructor')
+
+    existing = Certification.query.filter_by(name=name).first()
+    if existing:
+        return format_response({"error": "Certification already exists"}, status=409)
+
+    new_certification = Certification(
+        name=name,
+        price=price,
+        instructor=instructor,
+        description=description,
+        image_url=image_url,
+        student_count=0
+    )
+    db.session.add(new_certification)
     db.session.commit()
-    return jsonify({'id': cert.id, 'name': cert.name, 'description': cert.description}), 201
+
+    return format_response({
+        "message": "Certification added successfully",
+        "certification_id": new_certification.id
+    }, status=201)
+
 
 
 
@@ -158,36 +176,44 @@ def get_cert_id_by_name():
 @login_required
 @admin_required
 def admin_add_lab_guide(subpart_id):
-      cert = Certification.query.get(subpart_id)
-      if not cert:
-          return jsonify({'error': 'Certification not found'}), 404
+    subpart = Subpart.query.get(subpart_id)
+    if not subpart:
+        return jsonify({'error': 'Subpart not found'}), 404
 
-      if 'file' not in request.files:
-          return jsonify({'error': 'No file part'}), 400
+    lesson = Lesson.query.get(subpart.lesson_id)
+    certification = Certification.query.get(lesson.certification_id)
+    if not certification:
+        return jsonify({'error': 'Certification not found'}), 404
 
-      file = request.files['file']
-      if file.filename == '':
-          return jsonify({'error': 'No selected file'}), 400
+    cert_name = certification.name.replace(" ", "_")
 
-      if file and allowed_file(file.filename):
-          filename = secure_filename(file.filename)
-          object_key = f"lab_guides/{subpart_id}/{filename}"
-          bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
 
-          if upload_fileobj(file, bucket_name, object_key):
-              lab_guide = LabGuide.query.filter_by(subpart_id=subpart_id).first()
-              if not lab_guide:
-                  lab_guide = LabGuide(subpart_id=subpart_id)
-                  db.session.add(lab_guide)
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
 
-              lab_guide.object_key = object_key
-              db.session.commit()
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        object_key = f"certifications/{cert_name}/lab-guides/{filename}"
+        bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
 
-              url = generate_presigned_url(bucket_name, object_key)
-              return jsonify({'id': lab_guide.id, 'subpart_id': subpart_id, 'pdf_url': url}), 201
-          else:
-              return jsonify({'error': 'Upload to S3 failed'}), 500
-      return jsonify({'error': 'Invalid file type. Only PDF, MP4, or MOV allowed'}), 400
+        if upload_fileobj(file, bucket_name, object_key):
+            lab_guide = LabGuide.query.filter_by(subpart_id=subpart_id).first()
+            if not lab_guide:
+                lab_guide = LabGuide(subpart_id=subpart_id)
+                db.session.add(lab_guide)
+
+            lab_guide.object_key = object_key
+            db.session.commit()
+
+            url = generate_presigned_url(bucket_name, object_key)
+            return jsonify({'id': lab_guide.id, 'subpart_id': subpart_id, 'pdf_url': url}), 201
+        else:
+            return jsonify({'error': 'Upload to S3 failed'}), 500
+    return jsonify({'error': 'Invalid file type. Only PDF, MP4, or MOV allowed'}), 400
+
 
 # Edit quiz
 @admin_bp.route('/admin/certifications/<int:subpart_id>/quiz/<int:quiz_id>', methods=['PUT'])
@@ -274,9 +300,6 @@ def admin_edit_video(cert_id, video_id):
 @admin_required
 def admin_delete_certification(cert_id):
     cert = Certification.query.get(cert_id)
-    if not cert:
-        return jsonify({'error': 'Certification not found'}), 404
-
     db.session.delete(cert)
     db.session.commit()
     return jsonify({'message': 'Certification deleted successfully'}), 200
@@ -350,13 +373,14 @@ def create_subpart():
 @login_required
 @admin_required
 def get_lab_guide(subpart_id):
-      lab_guide = LabGuide.query.filter_bysubpart_id=subpart_id.first()
-      if not lab_guide or not lab_guide.object_key:
-          return jsonify({'error': 'Lab guide not found'}), 404
+    lab_guide = LabGuide.query.filter_by(subpart_id=subpart_id).first()  # fixed typo
+    if not lab_guide or not lab_guide.object_key:
+        return jsonify({'error': 'Lab guide not found'}), 404
 
-      bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
-      url = generate_presigned_url(bucket_name, lab_guide.object_key)
-      return jsonify({'id': lab_guide.id, 'subpart_id': subpart_id, 'pdf_url': url}), 200
+    bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
+    url = generate_presigned_url(bucket_name, lab_guide.object_key)
+    return jsonify({'id': lab_guide.id, 'subpart_id': subpart_id, 'pdf_url': url}), 200
+
 
 
 
@@ -406,6 +430,13 @@ def admin_add_video(subpart_id):
     if not subpart:
         return jsonify({'error': 'Subpart not found'}), 404
 
+    lesson = Lesson.query.get(subpart.lesson_id)
+    certification = Certification.query.get(lesson.certification_id)
+    if not certification:
+        return jsonify({'error': 'Certification not found'}), 404
+
+    cert_name = certification.name.replace(" ", "_")  # sanitize spaces
+
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
 
@@ -415,7 +446,8 @@ def admin_add_video(subpart_id):
 
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        object_key = f"videos/{subpart_id}/{filename}"
+        cert_name = certification.name.replace(" ", "_")
+        object_key = f"certifications/{cert_name}/videos/{filename}"
         bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
 
         if upload_fileobj(file, bucket_name, object_key):
@@ -433,6 +465,7 @@ def admin_add_video(subpart_id):
         else:
             return jsonify({'error': 'Upload to S3 failed'}), 500
     return jsonify({'error': 'Invalid file type. Only PDF, MP4, or MOV allowed'}), 400
+
 
 
 

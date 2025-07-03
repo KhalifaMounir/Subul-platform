@@ -21,6 +21,7 @@ export interface Lesson {
 export interface Certification {
   id: number;
   name: string;
+  description: string;
   booked_by_user: boolean;
   lessons: Lesson[];
   videoUrl?: string | null;

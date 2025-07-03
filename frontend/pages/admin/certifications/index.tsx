@@ -55,10 +55,10 @@ class ApiService {
     }));
   }
 
-  async addCertification(name: string) {
+  async addCertification(name: string, description: string) {
     return this.request('/admin/certifications', {
       method: 'POST',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, description }),
     });
   }
 
@@ -186,6 +186,7 @@ function App() {
   const handleActionSubmit = useCallback(
     async (data: {
       name?: string;
+      description?: string;
       title?: string;
       objectKey?: string;
       question?: string;
@@ -203,7 +204,7 @@ function App() {
         if (!currentAction) return;
         switch (currentAction.type) {
           case 'add-certification':
-            if (data.name) await apiService.addCertification(data.name);
+            if (data.name && data.description) await apiService.addCertification(data.name, data.description);
             break;
           case 'add-video':
             if (currentAction.targetId && data.objectKey && data.title) {

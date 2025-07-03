@@ -3,6 +3,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from app.s3_utils import generate_presigned_url
+from datetime import datetime
 
 # Association tables
 user_certifications = db.Table(
@@ -23,6 +24,7 @@ def load_user(user_id):
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(64), unique=True, nullable=False)
     username = db.Column(db.String(64), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
@@ -38,9 +40,12 @@ class Certification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     lessons = db.relationship('Lesson', backref='certification', lazy=True , cascade='all, delete-orphan')
-
     description=db.Column('description', db.String(255))
-
+    instructor = db.Column(db.String(100), nullable=True)
+    price = db.Column(db.Float, nullable=True)
+    image_url = db.Column(db.String(200), nullable=True)
+    student_count = db.Column(db.Integer, default=0)
+    # after book now of each certif student count ++
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     subpart_id = db.Column(db.Integer, db.ForeignKey('subpart.id', ondelete='CASCADE'), nullable=True)
@@ -102,3 +107,9 @@ class Subpart(db.Model):
     video = db.relationship('Video', backref='subpart', uselist=False, cascade='all, delete-orphan', lazy=True)
 
 
+class PaymentLog(db.Model):
+    id = db.Column(db.String(255), primary_key=True)
+    certificate_id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer, nullable=True)
+    event_type = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
