@@ -17,7 +17,8 @@ with DAG('job_scraping_pipeline',
 
     scrape_jobs = BashOperator(
         task_id='scrape_jobs',
-        bash_command='python scrapmain.py',  # Now looks in /opt/airflow/tools
+        bash_command='python scrapmain.py',  
+    
         env={
             'KAFKA_BROKER_URL': 'kafka:9092',
             'POSTGRES_HOST': 'postgres',
