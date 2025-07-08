@@ -157,9 +157,16 @@ class ApiService {
     return this.request(`/admin/certifications/${certId}/lab`);
   }
 
+  async getRecommendedJobs() {
+  return this.request('/jobs');
+}
   // Get video for certification
   async getVideo(certId: number) {
     return this.request(`/admin/certifications/${certId}/video`);
   }
 }
+
+
+
+
 export const apiService = new ApiService();

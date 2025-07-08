@@ -4,12 +4,17 @@ from app.models import User
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 from flask_login import current_user
-from app.models import Job, User, Certification, Quiz, LabGuide, Video
+from app.models import  User, Certification, Quiz, LabGuide, Video
 from werkzeug.utils import secure_filename
 import os
 from flask_login import logout_user
 from flask_cors import CORS
 from app.models import Subpart, Lesson, UserQuizAnswer
+from jobsearchsubul.tools.match_jobs import find_best_jobs
+from deep_translator import GoogleTranslator
+
+import sys
+
 
 bp = Blueprint('routes', __name__)
 
@@ -202,25 +207,7 @@ def get_video(subpart_id):
         {'id': v.id, 'title': v.title, 'url': v.url} for v in videos
     ]), 200
 
-@bp.route('/jobs/<int:cert_id>', methods=['GET'])
-@login_required
-def get_jobs(cert_id):
-    cert = Certification.query.get(cert_id)
-    if not cert:
-        return jsonify({'message': 'Certification not found'}), 404
 
-    jobs = cert.jobs
-
-    if not jobs:
-        return jsonify({'message': 'No jobs found for this certification'}), 404
-
-    return jsonify([
-        {
-            'id': job.id,
-            'title': job.title,
-            'description': job.description
-        } for job in jobs
-    ]), 200
 
 
 
@@ -271,3 +258,35 @@ def add_video(cert_id):
     db.session.commit()
 
     return jsonify({'id': video.id, 'title': title, 'url': url}), 201
+
+
+
+@bp.route('/recommend_jobs', methods=['GET'])
+@login_required
+def recommend_jobs():
+    cert_names = [cert.name for cert in current_user.certifications]
+
+    if not cert_names:
+        return jsonify({'message': 'No certification found for this user'}), 400
+
+    jobs = find_best_jobs(cert_names)
+
+    translated_jobs = []
+    for job in jobs:
+        try:
+            translated_jobs.append({
+                'id': job.get('id'),
+                'title': GoogleTranslator(source='en', target='ar').translate(job.get('title', '')),
+                'company': job.get('company', ''),
+                'location': GoogleTranslator(source='en', target='ar').translate(job.get('location', 'Remote')),
+                'date_posted': job.get('date_posted'),
+                'url': job.get('url')
+            })
+        except SystemExit:
+            print("Système de traduction a appelé sys.exit, on l’ignore et continue.")
+            continue
+        except Exception as e:
+            print(f"Erreur traduction: {e}")
+            continue
+
+    return jsonify(translated_jobs), 200

@@ -36,6 +36,10 @@ export default function Header({
     router.push('/profile');
   };
 
+  const goToJobs = () => {
+  router.push('/jobs');
+};
+
   return (
     <header className={styles.header}>
       <div className={styles.container}>
@@ -53,6 +57,11 @@ export default function Header({
               <i className="fas fa-user"></i>
               <span>الملف الشخصي</span>
             </button>
+            <button className={styles.navBtn} onClick={goToJobs}>
+              <i className="fas fa-briefcase"></i>
+              <span>الوظائف</span>
+            </button>
+
             <button
               onClick={handleSignOut}
               className={`${styles.navBtn} ${styles.loginNavBtn}`}

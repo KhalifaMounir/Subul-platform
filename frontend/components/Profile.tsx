@@ -1,6 +1,11 @@
 import styles from '@/styles/Profile.module.css'
+import { useRouter } from 'next/router'
 
 export default function Profile() {
+   const router = useRouter()
+
+
+
   return (
     <div className={`${styles.view} ${styles.active}`}>
       <div className={styles.container}>
@@ -39,6 +44,7 @@ export default function Profile() {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   )

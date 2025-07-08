@@ -1,43 +1,116 @@
 version: '3.8'
+
 services:
-  backend:
-    build: ./backend
+  postgres:
+    container_name: db_postgres
+    image: pgvector/pgvector:pg16
+    env_file:
+      - .env
     ports:
-      - "5000:5000" 
-    environment:
-      - FLASK_ENV=development
-      - SECRET_KEY=e3d801e9e817334e8274eba43cc4232d
-      - DATABASE_URL=postgresql://postgres:123pgAdmin4@postgres:5432/dbSubul
-      - AWS_ACCESS_KEY_ID=ASIAQGYBPWCVON7ISTJX
-      - AWS_SECRET_ACCESS_KEY=pDDWYXFr30M9L3ETQe3GBTWiefeugX48XvJmyUhK
-      - AWS_SESSION_TOKEN=IQoJb3JpZ2luX2VjEA8aCXVzLWVhc3QtMSJHMEUCICPMGd/Boo54NZxLmyCeKe7nuZlyu1MC5axbUeh/J0PjAiEAssVevLIpv0wYB
-                  13i/nAmeSHVLtD7aWDMAbPMkxjfFTIq8wII9///////////ARAAGgwwMTQ0OTg2NDAwNDIiDJKI/+/xLPbK9Z4s5SrHAkP55MfBCF
-                  MeC4HWU8BasYLkKvV7Rpznxlz60TXxSsUVVFnZnkb9Og2SucNWom1rogHaFJMkRSHvwJJuk5xJaxopRdbWsns8EqupPIg48cPOZ0o
-                  xjh/F1EtpATdvUTzf80En2vsuEsfYEHc/jcnxy4FYXaNfwWQy8/m1icHe5LVCQUh4RtVqvRENq36Y+PCPgEbyiNmq/4lg9ryoVFt3
-                  RCPPlAVKIsNKBQfrqZYNcfO2cxdcuaRKXk/d7AERom8A/uy4IoPshlkt7CG6s4qhgyr61vjVOy/382Xq3ZooQsYqiB2ctsa2qryGJ
-                  3X0qt+n2DeflUFfHdVB6rFtG1B2/GpoghfYVHT2Tavs6AF0zmzqJMVq+bLkaMe9f6qCS1BqIdtBEbi9QAAZ6HNIepbpeolvWqsTGT
-                  sbDT/U/1NCh+MbMjOnyGtJLzDbguLCBjqnASOleUENIRDIAoRq0btSJQJjpBJePpM5tPYIfxJ9SdYHKnzJoDHCESQcdoJjj88RFrC
-                  kwgOaN6Xlxc9ju5D4IL306wRS/Meotiy9sGefb6II9If4hnjI7RofWyxWtbrxhTbHTHiJ0aNuu9UBFGHZKcuRT7OHu9tPhqKGwb+S
-                  f46/L3+PcdjV8hafz2olhe3Z75t+OHqbpbe2BlzUmvujMAWhW5A1Vc8b
-      - AWS_DEFAULT_REGION=us-east-1
-      - S3_BUCKET_NAME=subul-platform-014498640042
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
     depends_on:
       - postgres
+
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
     ports:
       - "3000:3000"
     depends_on:
       - backend
-  postgres:
-    image: postgres:15
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.2.1
+    container_name: job_zookeeper
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1234
-      - POSTGRES_DB=dbSubul
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "5432:5432"
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.2.1
+    container_name: job_kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+  job_scraper:
+    build:
+      context: .
+      dockerfile: jobsearchsubul/Dockerfile
+    container_name: job_scraper
+    depends_on:
+      - kafka
+
+  job_consumer:
+    build:
+      context: .
+      dockerfile: jobsearchsubul/Dockerfile
+    container_name: job_consumer
+    command: ["python3", "jobsearchsubul/tools/consumer.py"]
+
+
+    depends_on:
+      - kafka
+      - postgres
+    env_file:
+      - .env
+
+  airflow-init:
+    image: apache/airflow:2.8.1
+    container_name: airflow_init
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:2024@postgres:5432/dbairflow
+    entrypoint: /bin/bash
+    command: -c "airflow db init && airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin"
+   
+
+  airflow-webserver:
+    image: apache/airflow:2.8.1
+    container_name: airflow_webserver
+    restart: always
+    depends_on:
+      - airflow-init
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:2024@postgres:5432/dbairflow
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1
+    container_name: airflow_scheduler
+    restart: always
+    depends_on:
+      - airflow-webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:2024@postgres:5432/dbairflow
+    command: scheduler
+
+
 volumes:
   postgres_data:

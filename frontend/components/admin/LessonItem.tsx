@@ -12,13 +12,14 @@ interface LessonItemProps {
 export default function LessonItem({ lesson, onAdminAction }: LessonItemProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
-  const handleAddSubpart = () => {
-    onAdminAction({
-      type: 'add-subpart',
-      targetId: lesson.id,
-      targetType: 'lesson',
-    });
-  };
+const handleAddSubpart = () => {
+  onAdminAction({
+    type: 'add-subpart',
+    targetId: lesson.id.toString(),
+    targetType: 'lesson',
+  });
+};
+
 
   // Only the header is clickable for expand/collapse, not the whole card
   return (
@@ -83,12 +84,13 @@ export default function LessonItem({ lesson, onAdminAction }: LessonItemProps) {
               </div>
             ) : (
               lesson.subparts.map((subpart) => (
-                <SubpartItem
-                  key={subpart.id}
-                  subpart={subpart}
-                  onAdminAction={onAdminAction}
-                  certificationId={lesson.certificationId}
-                />
+              <SubpartItem
+                key={subpart.id}
+                subpart={subpart}
+                onAdminAction={onAdminAction}
+                certificationId={lesson.certificationId.toString()} 
+              />
+
               ))
             )}
           </div>

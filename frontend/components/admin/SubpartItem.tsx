@@ -6,7 +6,9 @@ import styles from '@/styles/admin/SubpartItem.module.css';
 interface SubpartItemProps {
   subpart: Subpart;
   onAdminAction: (action: AdminAction) => void;
+  certificationId: string;
 }
+
 
 export default function SubpartItem({ subpart, onAdminAction }: SubpartItemProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);

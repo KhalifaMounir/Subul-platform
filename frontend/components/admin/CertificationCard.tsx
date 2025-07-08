@@ -40,9 +40,10 @@ export default function CertificationCard({ certification, onAdminAction }: Cert
       if (res.ok) {
         onAdminAction({
           type: 'delete-certification',
-          targetId: certification.id,
+          targetId: certification.id.toString(),
           targetType: 'certification',
         });
+
       } else {
         const data = await res.json();
         alert(data.error || 'فشل حذف الشهادة');
@@ -71,11 +72,12 @@ export default function CertificationCard({ certification, onAdminAction }: Cert
           ))}
           <button
             onClick={() =>
-              onAdminAction({
-                type: 'add-lesson',
-                targetId: certification.id,
-                targetType: 'certification',
-              })
+            onAdminAction({
+              type: 'add-lesson',
+              targetId: certification.id.toString(),
+              targetType: 'certification',
+            })
+
             }
             className={`${styles.actionButton} ${styles.addButton}`}
             style={{
