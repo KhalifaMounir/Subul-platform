@@ -76,40 +76,53 @@ services:
       - .env
 
   airflow-init:
-    image: apache/airflow:2.8.1
-    container_name: airflow_init
+    container_name: job_airflow-init
+    image: apache/airflow:2.9.1
     depends_on:
       - postgres
     environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:2024@postgres:5432/dbairflow
-    entrypoint: /bin/bash
-    command: -c "airflow db init && airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin"
-   
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:2024@postgres:5432/dbairflow
+    entrypoint: 
+      bash -c "airflow db init && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
+    volumes:
+      - ./jobsearchsubul/airflow/dags:/opt/airflow/dags
+      - ./jobsearchsubul/tools:/opt/airflow/tools
+
+
 
   airflow-webserver:
-    image: apache/airflow:2.8.1
-    container_name: airflow_webserver
-    restart: always
+    container_name: job_airflow-webserver
+    image: apache/airflow:2.9.1
     depends_on:
       - airflow-init
     ports:
       - "8080:8080"
     environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:2024@postgres:5432/dbairflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:2024@postgres:5432/dbairflow
+
+    volumes:
+      - ./jobsearchsubul/airflow/dags:/opt/airflow/dags
+      - ./jobsearchsubul/tools:/opt/airflow/tools
     command: webserver
 
+
   airflow-scheduler:
-    image: apache/airflow:2.8.1
-    container_name: airflow_scheduler
-    restart: always
+    container_name: job_airflow-scheduler
+    image: apache/airflow:2.9.1
     depends_on:
-      - airflow-webserver
+      - airflow-init
     environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:2024@postgres:5432/dbairflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:2024@postgres:5432/dbairflow
+    volumes:
+      - ./jobsearchsubul/airflow/dags:/opt/airflow/dags
+      - ./jobsearchsubul/tools:/opt/airflow/tools
     command: scheduler
+
+
 
 
 volumes:
