@@ -32,4 +32,4 @@ COPY backend/config.py ./config.py
 
 ENV PYTHONPATH=/app
 
-#CMD ["python", "jobsearchsubul/tools/scrapmain.py"]
+CMD ["python", "jobsearchsubul/tools/scrapmain.py"]
