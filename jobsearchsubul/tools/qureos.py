@@ -6,9 +6,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import time
 import tempfile
-from producer import send_to_kafka
 from tool import parse_date_en
-
+from producer import send_to_kafka
 
 # Initialisation du driver avec user-data-dir temporaire
 def get_driver():

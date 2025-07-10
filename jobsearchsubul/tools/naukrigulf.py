@@ -11,10 +11,8 @@ import tempfile
 from tool import parse_date_en
 from producer import send_to_kafka
 
-# URL cible
 BASE_URL = "https://www.naukrigulf.com/jobs-in-oman?industryType=25&locale=en&xz=1_2_5"
 
-# Options Chrome
 def get_options():
     options = Options()
     options.add_argument('--headless')
@@ -25,12 +23,10 @@ def get_options():
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
 
-    # Ajout d’un répertoire temporaire pour éviter l’erreur de session déjà en cours
     user_data_dir = tempfile.mkdtemp()
     options.add_argument(f"--user-data-dir={user_data_dir}")
     return options
 
-# Initialisation WebDriver
 def init_driver():
     options = get_options()
     driver = webdriver.Chrome(service=Service(), options=options)
@@ -39,7 +35,6 @@ def init_driver():
     })
     return driver
 
-# Récupération de la description détaillée d'une offre
 def get_job_description(driver, link):
     try:
         driver.get(link)
@@ -64,7 +59,6 @@ def get_job_description(driver, link):
         print(f"[ERROR] Description fetch error on {link} : {e}")
         return "N/A"
 
-# Extraction des données d'une carte offre
 def extract_job_data(card):
     date_tag = card.find("span", class_="time")
     date_posted = date_tag.get_text(strip=True) if date_tag else "N/A"
@@ -88,7 +82,6 @@ def extract_job_data(card):
         "source": "naukrigulf"
     }
 
-# Scraper principal
 def scrape_naukri(driver, base_url):
     current_page = 1
     base_pagination_url = "https://www.naukrigulf.com/jobs-in-oman"
@@ -138,7 +131,6 @@ def scrape_naukri(driver, base_url):
         current_page += 1
         sleep(2)
 
-# Lancement du scraping
 def run_scraping(base_url):
     driver = init_driver()
     try:
@@ -146,6 +138,6 @@ def run_scraping(base_url):
     finally:
         driver.quit()
 
-# Main
+
 if __name__ == "__main__":
     run_scraping(BASE_URL)

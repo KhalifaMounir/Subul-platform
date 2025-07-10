@@ -6,7 +6,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 import tempfile
-
 from tool import parse_date_en
 from producer import send_to_kafka
 

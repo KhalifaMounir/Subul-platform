@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10
 
 WORKDIR /app
 
@@ -21,6 +21,8 @@ RUN CHROMEDRIVER_VERSION="138.0.7204.49" && \
     mv chromedriver-linux64/chromedriver /usr/local/bin/ && \
     chmod +x /usr/local/bin/chromedriver && \
     rm -rf chromedriver*
+
+
 
 RUN pip install --no-cache-dir -r requirements.txt
 

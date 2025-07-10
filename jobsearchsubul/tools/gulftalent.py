@@ -5,7 +5,6 @@ from tool import parse_date_en, clean_description
 from producer import send_to_kafka
 
 
-
 url = "https://www.gulftalent.com/oman/jobs"
 
 HEADERS = {

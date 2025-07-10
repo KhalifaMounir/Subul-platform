@@ -267,7 +267,11 @@ def recommend_jobs():
     cert_names = [cert.name for cert in current_user.certifications]
 
     if not cert_names:
-        return jsonify({'message': 'No certification found for this user'}), 400
+        return jsonify({
+            'message': 'لا توجد عروض متاحة حاليًا، لقد حان الوقت للحصول على شهادة جديدة 👨‍🎓',
+            'jobs': []
+        }), 200
+
 
     jobs = find_best_jobs(cert_names)
 
@@ -289,4 +293,8 @@ def recommend_jobs():
             print(f"Erreur traduction: {e}")
             continue
 
-    return jsonify(translated_jobs), 200
+    return jsonify({
+    'message': '',
+    'jobs': translated_jobs
+}), 200
+

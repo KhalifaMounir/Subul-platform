@@ -103,3 +103,5 @@ class PaymentLog(db.Model):
     user_id = db.Column(db.Integer, nullable=True)
     event_type = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
