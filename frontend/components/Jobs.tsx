@@ -55,6 +55,20 @@ export default function Jobs() {
   const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
   return (
+    <div className={`${styles.view} ${styles.active}`}>
+      <div className={styles.courseContainer}>
+        <div className={styles.courseSidebar}>
+          <h3>فرص العمل</h3>
+          <input
+            type="text"
+            placeholder="ابحث عن وظيفة..."
+            className={styles.searchInput}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ marginTop: '1rem', padding: '0.5rem', borderRadius: '8px' }}
+          />
+        </div>
+
     <div className={styles.courseContent}>
       <h2 style={{ marginBottom: '1rem' }}>الوظائف المتاحة لك</h2>
 
@@ -205,6 +219,8 @@ export default function Jobs() {
           )}
         </>
       )}
+    </div>
+      </div>
     </div>
   );
 }
