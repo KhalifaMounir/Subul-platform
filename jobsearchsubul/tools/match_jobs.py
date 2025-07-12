@@ -99,7 +99,7 @@ def find_best_jobs(certifications):
     FROM jobs
     WHERE date_posted >= NOW() - INTERVAL '2 months'
     AND ({keyword_condition})
-    LIMIT 500
+   
 """
 
     cursor.execute(sql, params)
