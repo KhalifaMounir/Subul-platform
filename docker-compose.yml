@@ -1,4 +1,4 @@
-version: '3.8'
+# docker-compose.yml
 
 services:
   postgres:
@@ -81,22 +81,48 @@ services:
       - ./jobsearchsubul:/app/jobsearchsubul
       - ./backend:/app/backend
 
-  prefect:
-    build:
-      context: .
-      dockerfile: jobsearchsubul/Dockerfile
-    container_name: prefect
-    volumes:
-      - ./jobsearchsubul:/app/jobsearchsubul
-      - ./backend:/app/backend
+  prefect-server:
+    image: prefecthq/prefect:2-python3.11
+    container_name: prefect-server
+    command: ["prefect", "server", "start", "--host", "0.0.0.0"]
+    ports:
+      - "4200:4200"
+      - "8080:8080"
     env_file:
       - .env
     depends_on:
       - postgres
-      - kafka
+        
+    volumes:
+      - prefect_data:/root/.prefect
 
+
+  prefect-agent:
+    build:
+      context: .
+      dockerfile: jobsearchsubul/Dockerfile
+    container_name: prefect-agent
+    environment:
+      PREFECT_API_URL: "http://prefect-server:4200/api"
+      PREFECT_AGENT_QUEUE_NAME: "default"
+    depends_on:
+      - prefect-server
+      - kafka
+    command: >
+      sh -c "echo 'Waiting for Prefect Server to be ready...' &&
+      while ! curl -s http://prefect-server:4200/api/health >/dev/null; do
+        sleep 5;
+      done &&
+      echo 'Creating deployment...' &&
+      python3 jobsearchsubul/tools/deployment.py &&
+      echo 'Starting Prefect agent...' &&
+      exec prefect agent start -q default"
+    volumes:
+      - ./jobsearchsubul:/app/jobsearchsubul
+      - ./backend:/app/backend
 
 
 
 volumes:
   postgres_data:
+  prefect_data:

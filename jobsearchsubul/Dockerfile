@@ -22,18 +22,15 @@ RUN CHROMEDRIVER_VERSION="138.0.7204.49" && \
     rm -rf chromedriver*
 
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY jobsearchsubul ./jobsearchsubul
 COPY backend/app ./app
 COPY backend/config.py ./config.py
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app \
+    DISPLAY=:99
 
-HEALTHCHECK --interval=5s --timeout=10s --retries=10 \
-    CMD nc -z kafka 9092 || exit 1
 
-CMD bash -c "while ! nc -z kafka 9092; do sleep 2; done && \
-             python jobsearchsubul/tools/deployment.py && \
-             prefect agent start -q default"
+
+CMD ["prefect", "agent", "start", "-q", "default"]

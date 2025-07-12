@@ -57,17 +57,12 @@ export default function Jobs() {
   return (
     <div className={`${styles.view} ${styles.active}`}>
       <div className={styles.courseContainer}>
-        <div className={styles.courseSidebar}>
-          <h3>فرص العمل</h3>
-          <input
-            type="text"
-            placeholder="ابحث عن وظيفة..."
-            className={styles.searchInput}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ marginTop: '1rem', padding: '0.5rem', borderRadius: '8px' }}
-          />
-        </div>
+        <div className={styles.courseSidebar} style={{ padding: '1rem', textAlign: 'center' }}>
+            <h3>فرص العمل</h3>
+            <p>اكتشف فرص العمل المناسبة لك وابدأ مسيرتك المهنية الآن!</p>
+            <p>نحن نعمل على جلب أفضل الفرص لك باستمرار.</p>
+          </div>
+
 
     <div className={styles.courseContent}>
       <h2 style={{ marginBottom: '1rem' }}>الوظائف المتاحة لك</h2>
