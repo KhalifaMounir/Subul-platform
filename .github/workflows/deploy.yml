@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -15,9 +19,12 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
+          role-to-assume: arn:aws:iam::014498640042:role/DevOpsTeamRole
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+          role-session-name: GitHubActionsSession
+          audience: sts.amazonaws.com
 
       - name: Login to Amazon ECR
         id: login-ecr
