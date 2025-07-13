@@ -39,7 +39,7 @@ jobs:
 
       - name: Build and Push Job Scraper Image
         run: |
-          docker build -f jobsearchsubul/Dockerfile -t014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest ./jobsearchsubul
+          docker build -f jobsearchsubul/Dockerfile -t014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest .
           docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
 
       - name: Update kubeconfig
