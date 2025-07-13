@@ -1,4 +1,4 @@
-name: Deploy to EKS and Push Docker Images
+name: Deploy to EKS and Push Docker Images and Kubernetes Configurations
 
 on:
   push:
