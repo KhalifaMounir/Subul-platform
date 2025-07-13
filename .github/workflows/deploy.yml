@@ -15,9 +15,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::014498640042:role/DevOpsTeamRole
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-          role-session-name: GitHubActionSession
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -39,7 +39,7 @@ jobs:
           docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region us-east-1 --name Subul-cluster --profile DevOpsTeam-014498640042
+        run: aws eks update-kubeconfig --region us-east-1 --name Subul-cluster --profile default
 
       - name: Deploy to Kubernetes
         env:
