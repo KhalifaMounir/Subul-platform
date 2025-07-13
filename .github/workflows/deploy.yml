@@ -34,12 +34,12 @@ jobs:
 
       - name: Build and Push Frontend Image
         run: |
-          docker build -t 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest ./frontend
+          docker build -f frontend/Dockerfile -t014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest ./frontend
           docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest
 
       - name: Build and Push Job Scraper Image
         run: |
-          docker build -t 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest ./jobsearchsubul
+          docker build -f jobsearchsubul/Dockerfile -t014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest ./jobsearchsubul
           docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
 
       - name: Update kubeconfig
