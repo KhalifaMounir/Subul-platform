@@ -1,0 +1,66 @@
+name: Deploy to EKS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::014498640042:role/DevOpsTeamRole
+          aws-region: us-east-1
+          role-session-name: GitHubActionSession
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Backend Image
+        run: |
+          docker build -t 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-backend-latest ./backend
+          docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-backend-latest
+
+      - name: Build and Push Frontend Image
+        run: |
+          docker build -t 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest ./frontend
+          docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest
+
+      - name: Build and Push Job Scraper Image
+        run: |
+          docker build -t 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest ./jobsearchsubul
+          docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name Subul-cluster --profile DevOpsTeam-014498640042
+
+      - name: Deploy to Kubernetes
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_CHAT_ENDPOINT: ${{ secrets.AZURE_OPENAI_CHAT_ENDPOINT }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+        run: |
+          kubectl apply -f eks/deployment.yml
+
+      - name: Verify Deployment
+        run: |
+          kubectl get pods -n subul
