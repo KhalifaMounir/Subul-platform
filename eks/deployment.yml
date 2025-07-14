@@ -20,6 +20,7 @@ spec:
 
 
 ---
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,17 +39,6 @@ spec:
       containers:
       - name: postgres
         image: pgvector/pgvector:pg16
-        command: ["/bin/sh", "-c"]
-        args:
-        - |
-          # Start PostgreSQL in the background
-          /usr/local/bin/docker-entrypoint.sh postgres &
-          # Wait for PostgreSQL to be ready
-          until pg_isready; do sleep 1; done;
-          # Set the password for the postgres user
-          psql -U postgres -c "ALTER USER postgres WITH PASSWORD '$(printenv POSTGRES_PASSWORD)';"
-          # Keep the container running
-          wait
         ports:
         - containerPort: 5432
         env:
@@ -88,7 +78,7 @@ metadata:
 data:
   pg_hba.conf: |
     local   all   all   trust
-    host    all   all   0.0.0.0/0   scram-sha-256
+    host    all   all   0.0.0.0/0   trust  # Temporary for debugging
 ---
 apiVersion: apps/v1
 kind: Deployment
