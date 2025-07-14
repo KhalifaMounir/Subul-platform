@@ -3,29 +3,6 @@ kind: Namespace
 metadata:
   name: subul
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: app-secrets
-  namespace: subul
-type: Opaque
-stringData:
-  secret-key: "${{ secrets.SECRET_KEY }}"
-  database-url: "${{ secrets.DATABASE_URL }}"
-  aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-  aws-secret-access-key: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-  aws-session-token: "${{ secrets.AWS_SESSION_TOKEN }}"
-  aws-default-region: "${{ secrets.AWS_DEFAULT_REGION }}"
-  s3-bucket-name: "${{ secrets.S3_BUCKET_NAME }}"
-  azure-openai-api-key: "${{ secrets.AZURE_OPENAI_API_KEY }}"
-  azure-openai-chat-endpoint: "${{ secrets.AZURE_OPENAI_CHAT_ENDPOINT }}"
-  azure-openai-api-version: "${{ secrets.AZURE_OPENAI_API_VERSION }}"
-  azure-openai-deployment-name: "${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}"
-  postgres-user: "${{ secrets.POSTGRES_USER }}"
-  postgres-password: "${{ secrets.POSTGRES_PASSWORD }}"
-  postgres-db: "${{ secrets.POSTGRES_DB }}"
-  kafka-bootstrap-servers: "${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}"
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -67,8 +44,7 @@ spec:
               mountPath: /var/lib/postgresql/data
       volumes:
         - name: postgres-storage
-          emptyDir: {}  # 
-        
+          emptyDir: {}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -167,7 +143,10 @@ spec:
         - name: KAFKA_ZOOKEEPER_CONNECT
           value: "zookeeper:2181"
         - name: KAFKA_ADVERTISED_LISTENERS
-          value: "PLAINTEXT://kafka:9092"
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: KAFKA_ADVERTISED_LISTENERS
         - name: KAFKA_LISTENERS
           value: "PLAINTEXT://0.0.0.0:9092"
         - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR

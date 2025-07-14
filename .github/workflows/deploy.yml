@@ -52,30 +52,43 @@ jobs:
       - name: Validate kubectl access
         run: kubectl get nodes
       
+
+
       - name: Create Kubernetes Secrets
         run: |
+          # Create postgres-secret
           kubectl create secret generic postgres-secret \
-          --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
-          --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
-          --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
-          --dry-run=client -o yaml | kubectl apply -f -
+            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+            --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
+            --dry-run=client -o yaml | kubectl apply -f - \
+            -n subul
+          # Create app-secrets
+          kubectl create secret generic app-secrets \
+            --from-literal=SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+            --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            --from-literal=AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            --from-literal=AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            --from-literal=AWS_SESSION_TOKEN="${{ secrets.AWS_SESSION_TOKEN }}" \
+            --from-literal=AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
+            --from-literal=S3_BUCKET_NAME="${{ secrets.S3_BUCKET_NAME }}" \
+            --from-literal=AZURE_OPENAI_API_KEY="${{ secrets.AZURE_OPENAI_API_KEY }}" \
+            --from-literal=AZURE_OPENAI_CHAT_ENDPOINT="${{ secrets.AZURE_OPENAI_CHAT_ENDPOINT }}" \
+            --from-literal=AZURE_OPENAI_API_VERSION="${{ secrets.AZURE_OPENAI_API_VERSION }}" \
+            --from-literal=AZURE_OPENAI_DEPLOYMENT_NAME="${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}" \
+            --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
+            --from-literal=KAFKA_BOOTSTRAP_SERVERS="${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" \
+            --from-literal=KAFKA_ADVERTISED_LISTENERS="${{ secrets.KAFKA_ADVERTISED_LISTENERS }}" \
+            --dry-run=client -o yaml | kubectl apply -f - \
+            -n subul
 
+      - name: Delete Existing Postgres Deployment
+        run: kubectl delete pod -l app=postgres -n subul --force --grace-period=0 || true
 
 
       - name: Deploy to Kubernetes
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          AZURE_OPENAI_CHAT_ENDPOINT: ${{ secrets.AZURE_OPENAI_CHAT_ENDPOINT }}
-          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-          AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
         run: |
           kubectl apply -f eks/deployment.yml
 
