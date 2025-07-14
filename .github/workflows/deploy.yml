@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # Updated to v4 for compatibility
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -34,12 +34,12 @@ jobs:
 
       - name: Build and Push Frontend Image
         run: |
-          docker build -f frontend/Dockerfile -t 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest ./frontend
+          docker build -f frontend/Dockerfile -t014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest ./frontend
           docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest
 
       - name: Build and Push Job Scraper Image
         run: |
-          docker build -f jobsearchsubul/Dockerfile -t 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest ./jobsearchsubul
+          docker build -f jobsearchsubul/Dockerfile -t014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest .
           docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
 
       - name: Update kubeconfig
@@ -48,8 +48,11 @@ jobs:
             --region us-east-1 \
             --name Subul-cluster
 
+#id
       - name: Validate kubectl access
         run: kubectl get nodes
+      
+
 
       - name: Create Kubernetes Secrets
         run: |
@@ -58,8 +61,9 @@ jobs:
             --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
             --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
             --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
-            --dry-run=client -o yaml | kubectl apply -f -
-          # Create app-secrets with sanitized values
+            --dry-run=client -o yaml | kubectl apply -f - \
+            -n subul
+          # Create app-secrets
           kubectl create secret generic app-secrets \
             --from-literal=SECRET_KEY="${{ secrets.SECRET_KEY }}" \
             --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL }}" \
@@ -72,13 +76,21 @@ jobs:
             --from-literal=AZURE_OPENAI_CHAT_ENDPOINT="$(echo ${{ secrets.AZURE_OPENAI_CHAT_ENDPOINT }} | tr -d '[:space:]')" \
             --from-literal=AZURE_OPENAI_API_VERSION="${{ secrets.AZURE_OPENAI_API_VERSION }}" \
             --from-literal=AZURE_OPENAI_DEPLOYMENT_NAME="${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}" \
+            --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
             --from-literal=KAFKA_BOOTSTRAP_SERVERS="${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" \
+            --from-literal=KAFKA_ADVERTISED_LISTENERS="${{ secrets.KAFKA_ADVERTISED_LISTENERS }}" \
             --dry-run=client -o yaml | kubectl apply -f - \
             -n subul
 
+      - name: Delete Existing Postgres Deployment
+        run: kubectl delete pod -l app=postgres -n subul --force --grace-period=0 || true
+
+
       - name: Deploy to Kubernetes
         run: |
-          kubectl apply -f eks/deployment.yml --validate=false
+          kubectl apply -f eks/deployment.yml
 
       - name: Verify Deployment
         run: |
