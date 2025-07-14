@@ -51,6 +51,14 @@ jobs:
 #id
       - name: Validate kubectl access
         run: kubectl get nodes
+      
+      - name: Create Kubernetes Secrets
+        run: |
+          kubectl create secret generic postgres-secret \
+          --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+          --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+          --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
+          --dry-run=client -o yaml | kubectl apply -f -
 
 
 
