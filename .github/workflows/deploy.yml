@@ -52,7 +52,7 @@ jobs:
       - name: Validate kubectl access
         run: kubectl get nodes
       
-#edit
+#edit hhh
 
       - name: Create Kubernetes Secrets
         run: |
