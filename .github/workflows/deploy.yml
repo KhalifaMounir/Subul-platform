@@ -43,7 +43,15 @@ jobs:
           docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region us-east-1 --name Subul-cluster
+        run: |
+          aws eks update-kubeconfig \
+            --region us-east-1 \
+            --name Subul-cluster
+      - name: Validate kubectl access
+        run: kubectl get nodes
+
+
+
       - name: Deploy to Kubernetes
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
