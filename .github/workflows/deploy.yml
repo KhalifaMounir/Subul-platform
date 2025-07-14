@@ -61,8 +61,7 @@ jobs:
             --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
             --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
             --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
-            --dry-run=client -o yaml | kubectl apply -f - \
-            -n subul
+            --dry-run=client -o yaml | kubectl apply -f -
           # Create app-secrets
           kubectl create secret generic app-secrets \
             --from-literal=SECRET_KEY="${{ secrets.SECRET_KEY }}" \
@@ -76,11 +75,7 @@ jobs:
             --from-literal=AZURE_OPENAI_CHAT_ENDPOINT="$(echo ${{ secrets.AZURE_OPENAI_CHAT_ENDPOINT }} | tr -d '[:space:]')" \
             --from-literal=AZURE_OPENAI_API_VERSION="${{ secrets.AZURE_OPENAI_API_VERSION }}" \
             --from-literal=AZURE_OPENAI_DEPLOYMENT_NAME="${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}" \
-            --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
-            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
-            --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
             --from-literal=KAFKA_BOOTSTRAP_SERVERS="${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" \
-            --from-literal=KAFKA_ADVERTISED_LISTENERS="${{ secrets.KAFKA_ADVERTISED_LISTENERS }}" \
             --dry-run=client -o yaml | kubectl apply -f - \
             -n subul
 
