@@ -242,7 +242,6 @@ spec:
       containers:
       - name: job-consumer
         image: 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
-        working_dir: /app
         command: ["python3", "jobsearchsubul/tools/consumer.py"]
         envFrom:
         - secretRef:
