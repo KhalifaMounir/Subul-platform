@@ -1,0 +1,96 @@
+name: Deploy to EKS and Push Docker Images and Kubernetes Configurations
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 # Updated to v4 for compatibility
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::014498640042:role/DevOpsTeamRole
+          aws-region: us-east-1
+          role-session-name: GitHubActionsSession
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Backend Image
+        run: |
+          docker build -f backend/Dockerfile -t 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-backend-latest .
+          docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-backend-latest
+
+      - name: Build and Push Frontend Image
+        run: |
+          docker build -f frontend/Dockerfile -t014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest ./frontend
+          docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest
+
+      - name: Build and Push Job Scraper Image
+        run: |
+          docker build -f jobsearchsubul/Dockerfile -t014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest .
+          docker push 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region us-east-1 \
+            --name Subul-cluster
+
+#id d
+      - name: Validate kubectl access
+        run: kubectl get nodes
+      
+#edit hhh
+
+      - name: Create Kubernetes Secrets
+        run: |
+          # Create postgres-secret
+          kubectl create secret generic postgres-secret \
+            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+            --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
+            --dry-run=client -o yaml | kubectl apply -f - -n subul
+          # Create app-secrets
+          kubectl create secret generic app-secrets \
+            --from-literal=SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+            --from-literal=DATABASE_URL="postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres-service:5432/${{ secrets.POSTGRES_DB }}" \
+            --from-literal=AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            --from-literal=AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            --from-literal=AWS_SESSION_TOKEN="${{ secrets.AWS_SESSION_TOKEN }}" \
+            --from-literal=AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
+            --from-literal=S3_BUCKET_NAME="${{ secrets.S3_BUCKET_NAME }}" \
+            --from-literal=AZURE_OPENAI_API_KEY="${{ secrets.AZURE_OPENAI_API_KEY }}" \
+            --from-literal=AZURE_OPENAI_CHAT_ENDPOINT="${{ secrets.AZURE_OPENAI_CHAT_ENDPOINT }}" \
+            --from-literal=AZURE_OPENAI_API_VERSION="${{ secrets.AZURE_OPENAI_API_VERSION }}" \
+            --from-literal=AZURE_OPENAI_DEPLOYMENT_NAME="${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}" \
+            --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}" \
+            --from-literal=KAFKA_BOOTSTRAP_SERVERS="${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" \
+            --from-literal=KAFKA_ADVERTISED_LISTENERS="${{ secrets.KAFKA_ADVERTISED_LISTENERS }}" \
+            --dry-run=client -o yaml | kubectl apply -f - \
+            -n subul
+
+      - name: Delete Existing Postgres Deployment
+        run: kubectl delete pod -l app=postgres -n subul --force --grace-period=0 || true
+
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f eks/deployment.yml
+
+      - name: Verify Deployment
+        run: |
+          kubectl get pods -n subul

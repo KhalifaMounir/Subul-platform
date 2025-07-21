@@ -1,0 +1,368 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: subul
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: subul
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP
+
+
+---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: subul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: pgvector/pgvector:pg16
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_DB
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-config
+          mountPath: /etc/postgresql/pg_hba.conf
+          subPath: pg_hba.conf
+      volumes:
+      - name: postgres-data
+        emptyDir: {}
+      - name: postgres-config
+        configMap:
+          name: postgres-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: subul
+data:
+  pg_hba.conf: |
+    local   all   all   trust
+    host    all   all   0.0.0.0/0   trust  # Temporary for debugging
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: subul
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-backend-latest
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - secretRef:
+            name: app-secrets
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: subul
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-frontend-latest
+        ports:
+        - containerPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zookeeper
+  namespace: subul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+      - name: zookeeper
+        image: confluentinc/cp-zookeeper:7.2.1
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name: ZOOKEEPER_TICK_TIME
+          value: "2000"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: subul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:7.2.1
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "1"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: "zookeeper:2181"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: KAFKA_ADVERTISED_LISTENERS
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://0.0.0.0:9092"
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: job-scraper
+  namespace: subul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: job-scraper
+  template:
+    metadata:
+      labels:
+        app: job-scraper
+    spec:
+      containers:
+      - name: job-scraper
+        image: 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        volumeMounts:
+        - name: shared-data
+          mountPath: /app
+      volumes:
+      - name: shared-data
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: job-consumer
+  namespace: subul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: job-consumer
+  template:
+    metadata:
+      labels:
+        app: job-consumer
+    spec:
+      containers:
+      - name: job-consumer
+        image: 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
+        command: ["python3", "jobsearchsubul/tools/consumer.py"]
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        volumeMounts:
+        - name: shared-data
+          mountPath: /app
+      volumes:
+      - name: shared-data
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prefect-server
+  namespace: subul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prefect-server
+  template:
+    metadata:
+      labels:
+        app: prefect-server
+    spec:
+      containers:
+      - name: prefect-server
+        image: prefecthq/prefect:2-python3.11
+        command: ["prefect", "server", "start", "--host", "0.0.0.0"]
+        ports:
+        - containerPort: 4200
+        - containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        volumeMounts:
+        - name: prefect-data
+          mountPath: /root/.prefect
+      volumes:
+      - name: prefect-data
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prefect-agent
+  namespace: subul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prefect-agent
+  template:
+    metadata:
+      labels:
+        app: prefect-agent
+    spec:
+      containers:
+      - name: prefect-agent
+        image: 014498640042.dkr.ecr.us-east-1.amazonaws.com/subul:subul-job-scraper-latest
+        command:
+        - sh
+        - -c
+        - >
+          echo 'Waiting for Prefect Server to be ready...' &&
+          while ! curl -s http://prefect-server:4200/api/health >/dev/null; do
+            sleep 5;
+          done &&
+          echo 'Creating deployment...' &&
+          python3 jobsearchsubul/tools/deployment.py &&
+          echo 'Starting Prefect agent...' &&
+          exec prefect agent start -q default
+        env:
+        - name: PREFECT_API_URL
+          value: "http://prefect-server:4200/api"
+        - name: PREFECT_AGENT_QUEUE_NAME
+          value: "default"
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        volumeMounts:
+        - name: shared-data
+          mountPath: /app
+      volumes:
+      - name: shared-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: subul
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: subul
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prefect-server-service
+  namespace: subul
+spec:
+  selector:
+    app: prefect-server
+  ports:
+    - protocol: TCP
+      name: http-4200
+      port: 4200
+      targetPort: 4200
+    - protocol: TCP
+      name: http-8080
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
