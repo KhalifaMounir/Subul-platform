@@ -73,7 +73,7 @@ def keyword_match_score(text, keywords):
 
 
 def find_best_jobs(certifications):
-    print(f"\n🎓 Certifications fournies: {', '.join(certifications)}")
+    print(f"\n Certifications fournies: {', '.join(certifications)}")
 
     profile_text = generate_profile_description(certifications)
     print(f" Profil généré: {profile_text}")
@@ -99,7 +99,7 @@ def find_best_jobs(certifications):
     FROM jobs
     WHERE date_posted >= NOW() - INTERVAL '2 months'
     AND ({keyword_condition})
-   
+    LIMIT 500
 """
 
     cursor.execute(sql, params)
@@ -144,7 +144,7 @@ def find_best_jobs(certifications):
         print(f"   Score final : {job['final_score']:.2f} (Sim: {job['similarity_score']:.2f} | KW: {job['keyword_score']:.2f})")
         print(f"    {job['url']}\n")
 
-    return results[:100]
+    return results[:300]
 
 
 if __name__ == "__main__":

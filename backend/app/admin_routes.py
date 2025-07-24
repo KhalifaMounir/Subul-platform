@@ -96,7 +96,7 @@ def admin_add_lesson():
 def admin_add_certification():
     data = request.get_json()
     if not data or 'name' not in data or not data['name'].strip():
-        return format_response({"error": "Name cannot be empty"}, status=400)
+        return jsonify({"error": "Name cannot be empty"}), 400
 
     name = data['name'].strip()
     price = data.get('price')
@@ -106,7 +106,7 @@ def admin_add_certification():
 
     existing = Certification.query.filter_by(name=name).first()
     if existing:
-        return format_response({"error": "Certification already exists"}, status=409)
+        return jsonify({"error": "Certification already exists"}), 409
 
     new_certification = Certification(
         name=name,
@@ -119,10 +119,10 @@ def admin_add_certification():
     db.session.add(new_certification)
     db.session.commit()
 
-    return format_response({
+    return jsonify({
         "message": "Certification added successfully",
         "certification_id": new_certification.id
-    }, status=201)
+    }), 201
 
 
 
@@ -170,6 +170,34 @@ def get_cert_id_by_name():
         return jsonify({'error': 'Certification not found'}), 404
 
     return jsonify({'cert_id': cert.id}), 200
+
+@admin_bp.route('/admin/certifications', methods=['GET'])
+@login_required
+@admin_required
+def certifications():
+    all_certs = Certification.query.all()
+
+    result = []
+    for cert in all_certs:
+        result.append({
+            'id': cert.id,
+            'name': cert.name,
+        })
+    return jsonify(result), 200
+
+@admin_bp.route('/admin/certifications/<int:cert_id>', methods=['GET'])
+@login_required
+@admin_required
+def get_certification(cert_id):
+    cert = Certification.query.get(cert_id)
+    if not cert:
+        return jsonify({'error': 'Certification not found'}), 404
+    return jsonify({
+        'id': cert.id,
+        'name': cert.name,
+    }), 200
+
+
 
 # add lab guide
 @admin_bp.route('/admin/certifications/<int:subpart_id>/lab', methods=['POST'])
@@ -506,3 +534,37 @@ def get_lessons_and_subparts():
         result.append(cert_data)
 
     return jsonify(result), 200
+
+@admin_bp.route('/lessons-and-subparts/<cert_id>', methods=['GET'])
+@login_required
+@admin_required
+def get_lessons_and_subparts_by_cert(cert_id):
+    certification = Certification.query.get(cert_id)
+    if certification is None:
+        return jsonify({'error': 'Certification not found'}), 404
+    lessons = Lesson.query.filter_by(certification_id=cert_id).all()
+    result = []
+    for lesson in lessons:
+        subparts = Subpart.query.filter_by(lesson_id=lesson.id).all()
+        lesson_data = {
+            'id': lesson.id,
+            'title': lesson.title,
+            'completed': lesson.completed,
+            'subparts': [
+                {
+                    'id': subpart.id,
+                    'title': subpart.title,
+                    'duration': subpart.duration,
+                    'videoId': subpart.video.id if subpart.video else None,  
+                    'completed': subpart.completed,
+                    'isQuiz': subpart.is_quiz
+                } for subpart in subparts
+            ]
+        }
+        result.append(lesson_data)
+    return jsonify({
+        'certification_id': certification.id,
+        'lessons': result
+    }), 200
+
+    

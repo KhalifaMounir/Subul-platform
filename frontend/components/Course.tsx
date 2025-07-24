@@ -1,8 +1,6 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import QuizModal from "./QuizModal";
+import QuizModal from "@/components/QuizModal"; 
 import styles from "@/styles/Course.module.css";
 import Header from "@/components/HomeHeader";
 
@@ -29,13 +27,17 @@ interface LabGuide {
 }
 
 interface CourseProps {
-  certId?: string | null; // Added certId as an optional prop
+  certId?: string | null; 
 }
 
 export default function Course({ certId }: CourseProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const certIdFromParams = searchParams.get("cert_id") || certId; // Fallback to prop if param is missing
+  const certIdFromParams = searchParams.get("cert_id") || certId;
+  const lessonIdFromParams = searchParams.get("lesson_id");
+  const subpartIdFromParams = searchParams.get("subpart_id");
+  const timestampParam = searchParams.get("timestamp"); 
+
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [currentSubpart, setCurrentSubpart] = useState<Subpart & { lessonId: number; lessonTitle: string } | null>(null);
   const [videoError, setVideoError] = useState(false);
@@ -46,6 +48,7 @@ export default function Course({ certId }: CourseProps) {
   const [labGuide, setLabGuide] = useState<LabGuide | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [videoStartTime, setVideoStartTime] = useState<number | null>(null);
 
   useEffect(() => {
     if (!certIdFromParams) {
@@ -54,7 +57,6 @@ export default function Course({ certId }: CourseProps) {
       router.push("/dashboard");
       return;
     }
-
     const fetchData = async () => {
       try {
         setIsLoading(true);
@@ -78,7 +80,6 @@ export default function Course({ certId }: CourseProps) {
         const lessonsData = await lessonsResponse.json();
         setLessons(lessonsData);
         setError(null);
-
         if (labResponse.ok) {
           const labData = await labResponse.json();
           setLabGuide(labData);
@@ -91,23 +92,93 @@ export default function Course({ certId }: CourseProps) {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [certIdFromParams, router]);
 
   useEffect(() => {
+    if (subpartIdFromParams) {
+      const subpartId = parseInt(subpartIdFromParams, 10);
+      if (!isNaN(subpartId)) {
+         const targetSubpartWithLesson = lessons
+          .flatMap((lesson) =>
+            lesson.subparts.map((subpart) => ({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title }))
+          )
+          .find((sp) => sp.id === subpartId);
+
+        if (targetSubpartWithLesson) {
+          const lesson = lessons.find((l) => l.id === targetSubpartWithLesson.lessonId);
+          if (lesson) {
+            setCurrentLesson(lesson);
+            setCurrentSubpart(targetSubpartWithLesson);
+            setExpandedLessons((prev) => ({ ...prev, [targetSubpartWithLesson.lessonId]: true }));
+            if (timestampParam) {
+                const ts = parseInt(timestampParam, 10);
+                if (!isNaN(ts) && ts > 0) {
+                    setVideoStartTime(ts);
+                 } else {
+                     setVideoStartTime(null);
+                 }
+            } else {
+                 setVideoStartTime(null);
+            }
+            setVideoError(false); 
+            return; 
+          }
+        }
+      }
+    }
+
     const firstIncompleteSubpart = lessons
       .flatMap((lesson) =>
         lesson.subparts.map((subpart) => ({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title }))
       )
       .find((subpart) => !subpart.completed);
+
     if (firstIncompleteSubpart) {
       const lesson = lessons.find((l) => l.id === firstIncompleteSubpart.lessonId);
       setCurrentLesson(lesson);
       setCurrentSubpart(firstIncompleteSubpart);
       setExpandedLessons((prev) => ({ ...prev, [firstIncompleteSubpart.lessonId]: true }));
+       setVideoStartTime(null);
+    } else {
+        const firstSubpartWithLesson = lessons
+        .flatMap((lesson) =>
+            lesson.subparts.map((subpart) => ({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title }))
+        )
+        .find(() => true); 
+
+        if (firstSubpartWithLesson) {
+            const lesson = lessons.find((l) => l.id === firstSubpartWithLesson.lessonId);
+            setCurrentLesson(lesson);
+            setCurrentSubpart(firstSubpartWithLesson);
+            setExpandedLessons((prev) => ({ ...prev, [firstSubpartWithLesson.lessonId]: true }));
+             setVideoStartTime(null);
+        }
     }
-  }, [lessons]);
+  }, [lessons, subpartIdFromParams, lessonIdFromParams, timestampParam]);
+
+  useEffect(() => {
+    if (videoStartTime !== null && currentSubpart && currentSubpart.videoUrl) {
+        const videoElement = document.querySelector(`.${styles.video}`) as HTMLVideoElement | null;
+        if (videoElement) {
+            const handleLoadedMetadata = () => {
+                 videoElement.currentTime = videoStartTime;
+                 videoElement.play().catch(e => console.error("Autoplay failed:", e));
+                 videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            };
+
+            if (videoElement.readyState >= 1) {
+                 videoElement.currentTime = videoStartTime;
+                 videoElement.play().catch(e => console.error("Autoplay failed:", e));
+            } else {
+                videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+                 return () => {
+                    videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+                 };
+            }
+        }
+    }
+  }, [videoStartTime, currentSubpart]); 
 
   const calculateProgress = () => {
     const totalSubparts = lessons.flatMap((lesson) => lesson.subparts).length;
@@ -127,6 +198,7 @@ export default function Course({ certId }: CourseProps) {
     setCurrentLesson(lesson);
     setCurrentSubpart({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title });
     setVideoError(false);
+     setVideoStartTime(null); 
   };
 
   const markSubpartCompleted = async (subpartId: number) => {
@@ -157,9 +229,7 @@ export default function Course({ certId }: CourseProps) {
 
   const handleNextSubpart = async () => {
     if (!currentSubpart || !currentLesson) return;
-
     await markSubpartCompleted(currentSubpart.id);
-
     const allSubparts = lessons.flatMap((lesson) =>
       lesson.subparts.map((subpart) => ({ ...subpart, lessonId: lesson.id, lessonTitle: lesson.title }))
     );
@@ -171,6 +241,7 @@ export default function Course({ certId }: CourseProps) {
       setCurrentSubpart(next);
       setExpandedLessons((prev) => ({ ...prev, [next.lessonId]: true }));
       setVideoError(false);
+       setVideoStartTime(null); 
     }
   };
 

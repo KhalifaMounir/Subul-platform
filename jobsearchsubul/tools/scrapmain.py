@@ -11,8 +11,8 @@ def main():
     print("scraping careerjet...")
     scrape_careerjet()
 
-    print("scraping expat...")
-    scrape_expat()
+    #print("scraping expat...")
+    #scrape_expat()
 
     print("scraping gulftalent...")
     scrape_gulftalent("https://www.gulftalent.com/oman/jobs")
@@ -26,8 +26,7 @@ def main():
     print("Lancement du scraping himalayas...")
     scrape_himalayas()
     
-    print("Lancement du scraping himalayas...")
-    scrape_himalayas()
+
 
 
     print("final of Scraping.")

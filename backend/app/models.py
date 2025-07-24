@@ -48,8 +48,8 @@ class Quiz(db.Model):
     question = db.Column(db.String(256))
     options = db.Column(db.JSON)
     answer = db.Column(db.String(128))
-    timestamp = db.Column(db.Float) # When to show the quiz in the video
-
+    timestamp = db.Column(db.Float)
+    subpart = db.relationship('Subpart', backref='quizzes', lazy=True)
 
 class LabGuide(db.Model):
     id = db.Column(db.Integer, primary_key=True)

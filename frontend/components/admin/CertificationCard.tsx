@@ -40,7 +40,7 @@ export default function CertificationCard({ certification, onAdminAction }: Cert
       if (res.ok) {
         onAdminAction({
           type: 'delete-certification',
-          targetId: certification.id.toString(),
+          targetId: certification && certification.id ? certification.id.toString() : '' , 
           targetType: 'certification',
         });
 
@@ -74,7 +74,7 @@ export default function CertificationCard({ certification, onAdminAction }: Cert
             onClick={() =>
             onAdminAction({
               type: 'add-lesson',
-              targetId: certification.id.toString(),
+              targetId: certification && certification.id ? certification.id.toString() : '' ,
               targetType: 'certification',
             })
 

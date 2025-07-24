@@ -88,7 +88,7 @@ const handleAddSubpart = () => {
                 key={subpart.id}
                 subpart={subpart}
                 onAdminAction={onAdminAction}
-                certificationId={lesson.certificationId.toString()} 
+                certificationId={lesson?.certificationId?.toString() ?? ''}
               />
 
               ))

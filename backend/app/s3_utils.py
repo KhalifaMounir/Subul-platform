@@ -2,11 +2,10 @@ import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 
 def get_s3_client():
-    session = boto3.Session(profile_name='DevOpsTeam-014498640042') 
-    return session.client('s3')
+    return boto3.client('s3')
 
 def delete_s3_object(bucket_name, object_key):
-    s3_client = get_s3_client()  # unified client usage
+    s3_client = get_s3_client() 
     try:
         s3_client.delete_object(Bucket=bucket_name, Key=object_key)
         return True

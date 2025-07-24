@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+from hashlib import md5
+import time
 from flask import Blueprint, request, jsonify,current_app
 from app import db, login_manager
 from app.models import User
@@ -11,9 +14,8 @@ from flask_login import logout_user
 from flask_cors import CORS
 from app.models import Subpart, Lesson, UserQuizAnswer
 from jobsearchsubul.tools.match_jobs import find_best_jobs
-from deep_translator import GoogleTranslator
+from app.s3_utils import generate_presigned_url 
 
-import sys
 
 
 bp = Blueprint('routes', __name__)
@@ -35,6 +37,7 @@ def login():
             'is_admin': user.is_admin  # Add is_admin
         }), 200
     return jsonify({'message': 'Invalid credentials'}), 401
+
 
 @bp.route('/logout', methods=['POST'])
 @login_required
@@ -129,44 +132,61 @@ def get_quiz(subpart_id):
 
 
 #Submit Answer Route
+def convert_seconds_to_timestamp(seconds):
+    minutes = int(seconds) // 60
+    secs = int(seconds) % 60
+    return f"{minutes}:{secs:02d}"
 
 @bp.route('/quiz/<int:quiz_id>/answer', methods=['POST'])
 @login_required
 def submit_quiz_answer(quiz_id):
-    quiz = Quiz.query.get(quiz_id)
-    if not quiz:
-        return jsonify({'error': 'Quiz not found'}), 404
-
+    quiz = Quiz.query.get_or_404(quiz_id)
     data = request.get_json()
     selected = data.get('selected_option')
-
     if not selected:
         return jsonify({'error': 'Selected option required'}), 400
 
     is_correct = selected.strip().lower() == quiz.answer.strip().lower()
+    suggestion_data = None 
 
-    # Optional: check if already answered
-    existing = UserQuizAnswer.query.filter_by(user_id=current_user.id, quiz_id=quiz_id).first()
-    if existing:
-        return jsonify({'message': 'Already answered this question'}), 400
+    if not is_correct and quiz.timestamp and quiz.subpart and quiz.subpart.video:
+        ts = convert_seconds_to_timestamp(quiz.timestamp)
 
-    answer = UserQuizAnswer(
-        user_id=current_user.id,
-        quiz_id=quiz_id,
-        selected_option=selected,
-        is_correct=is_correct
+        subpart_id = quiz.subpart.id
+        lesson_id = quiz.subpart.lesson.id 
+        certification_id = quiz.subpart.lesson.certification.id 
+        suggestion_data = {
+            "message": f"راجع الفيديو عند الدقيقة {ts}",
+            "subpart_id": subpart_id,
+            "lesson_id": lesson_id,
+            "timestamp": int(quiz.timestamp)
+        }
+
+        # bucket_name = os.getenv('S3_BUCKET_NAME', 'subul-platform-014498640042')
+        # url = generate_presigned_url(bucket_name, quiz.subpart.video.object_key)
+        # if url:
+        #     suggestion_data["s3_url"] = url
+
+    db.session.add(
+        UserQuizAnswer(
+            user_id=current_user.id,
+            quiz_id=quiz_id,
+            selected_option=selected,
+            is_correct=is_correct
+        )
     )
-    db.session.add(answer)
     db.session.commit()
 
     return jsonify({
         'quiz_id': quiz.id,
         'selected': selected,
         'correct_answer': quiz.answer,
-        'is_correct': is_correct
+        'is_correct': is_correct,
+        'suggestion': suggestion_data 
     }), 200
 
 #Route to Get Quiz Results for a User
+
 
 @bp.route('/quiz/results/<int:subpart_id>', methods=['GET'])
 @login_required
@@ -176,16 +196,25 @@ def get_quiz_results(subpart_id):
 
     for quiz in quizzes:
         answer = UserQuizAnswer.query.filter_by(user_id=current_user.id, quiz_id=quiz.id).first()
+        
+        guidance = None
+        if answer and not answer.is_correct and quiz.timestamp and quiz.subpart and quiz.subpart.video:
+            timestamp = convert_seconds_to_timestamp(quiz.timestamp)
+            video_url = quiz.subpart.video.object_key
+            guidance = f" إجابة خاطئة راجع الفيديو عند الدقيقة {timestamp}: {video_url}#t={int(quiz.timestamp)}"
+
         results.append({
             'quiz_id': quiz.id,
             'question': quiz.question,
             'selected': answer.selected_option if answer else None,
             'correct': quiz.answer,
             'is_correct': answer.is_correct if answer else None,
-            'timestamp': quiz.timestamp
+            'timestamp': quiz.timestamp,
+            'suggestion': guidance  
         })
 
     return jsonify(results), 200
+
 
 
 
@@ -211,32 +240,9 @@ def get_video(subpart_id):
 
 
 
-@bp.route('/quiz/<int:subpart_id>', methods=['POST'])
-@login_required
-def add_quiz(subpart_id):
-    cert = Certification.query.get(subpart_id)
-    if not cert:
-        return jsonify({'error': 'Certification not found'}), 404
 
-    data = request.get_json()
-    question = data.get('question')
-    options = data.get('options')
-    answer = data.get('answer')
 
-    if not question or not options or not answer:
-        return jsonify({'error': 'Question, options and answer required'}), 400
 
-    quiz = Quiz(subpart_id=subpart_id, question=question, options=options, answer=answer)
-    db.session.add(quiz)
-    db.session.commit()
-
-    return jsonify({
-        'id': quiz.id,
-        'subpart_id': subpart_id,
-        'question': question,
-        'options': options,
-        'answer': answer
-    }), 201
 
 
 @bp.route('/video/<int:cert_id>', methods=['POST'])
@@ -259,42 +265,44 @@ def add_video(cert_id):
 
     return jsonify({'id': video.id, 'title': title, 'url': url}), 201
 
+cached_results = {}
 
+def seconds_until_midnight():
+    now = datetime.now()
+    midnight = datetime.combine(now + timedelta(days=1), datetime.min.time())
+    return int((midnight - now).total_seconds())
+
+
+def get_cached_jobs(cert_hash):
+    data = cached_results.get(cert_hash)
+    if data and time.time() - data['timestamp'] < seconds_until_midnight():
+        return data['jobs']
+    return None
+
+def cache_jobs(cert_hash, jobs):
+    cached_results[cert_hash] = {
+        'timestamp': time.time(),
+        'jobs': jobs
+    }
 
 @bp.route('/recommend_jobs', methods=['GET'])
 @login_required
 def recommend_jobs():
     cert_names = [cert.name for cert in current_user.certifications]
-
     if not cert_names:
         return jsonify({
-            'message': 'لا توجد عروض متاحة حاليًا، لقد حان الوقت للحصول على شهادة جديدة',
+            'message': 'لا توجد عروض متاحة حالياً، لقد حان الوقت للحصول على شهادة جديدة',
             'jobs': []
         }), 200
 
+    cert_hash = md5(','.join(sorted(cert_names)).encode()).hexdigest()
 
-    jobs = find_best_jobs(cert_names)
-
-    translated_jobs = []
-    for job in jobs:
-        try:
-            translated_jobs.append({
-                'id': job.get('id'),
-                'title': GoogleTranslator(source='en', target='ar').translate(job.get('title', '')),
-                'company': job.get('company', ''),
-                'location': GoogleTranslator(source='en', target='ar').translate(job.get('location', 'Remote')),
-                'date_posted': job.get('date_posted'),
-                'url': job.get('url')
-            })
-        except SystemExit:
-            print("Système de traduction a appelé sys.exit, on l’ignore et continue.")
-            continue
-        except Exception as e:
-            print(f"Erreur traduction: {e}")
-            continue
+    jobs = get_cached_jobs(cert_hash)
+    if jobs is None:
+        jobs = find_best_jobs(cert_names)
+        cache_jobs(cert_hash, jobs)
 
     return jsonify({
-    'message': '',
-    'jobs': translated_jobs
-}), 200
-
+        'message': '',
+        'jobs': jobs 
+    }), 200
