@@ -1,5 +1,4 @@
-/* globals.css - Updated to match old style */
-
+/* globals.css - Updated with RTL/LTR support */
 * {
   margin: 0;
   padding: 0;
@@ -31,12 +30,13 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-html,
-body {
+/* RTL/LTR CSS Custom Properties will be set by _document.js */
+
+html, body {
   max-width: 100vw;
   overflow-x: hidden;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  direction: rtl;
+  /* Remove hardcoded direction - let _document.js handle it */
 }
 
 body {
@@ -44,6 +44,7 @@ body {
   color: var(--gray-900);
   background-color: var(--gray-50);
   min-height: 100vh;
+  text-align: var(--text-align-start);
 }
 
 a {
@@ -68,7 +69,7 @@ input, select {
   padding: 0 1rem;
 }
 
-/* Button styles matching old design */
+/* Button styles with RTL support */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -80,6 +81,7 @@ input, select {
   transition: all 0.2s;
   border: none;
   font-size: 0.875rem;
+  text-align: center;
 }
 
 .btn-primary {
@@ -109,7 +111,7 @@ input, select {
   background-color: #059669;
 }
 
-/* Form elements */
+/* Form elements with RTL support */
 input, select {
   padding: 0.75rem;
   border: 2px solid var(--gray-200);
@@ -117,9 +119,61 @@ input, select {
   font-size: 0.875rem;
   background-color: var(--white);
   transition: border-color 0.2s;
+  text-align: var(--text-align-start);
 }
 
 input:focus, select:focus {
   outline: none;
   border-color: var(--primary);
+}
+
+/* Utility classes for RTL/LTR aware styling */
+.text-start {
+  text-align: var(--text-align-start);
+}
+
+.text-end {
+  text-align: var(--text-align-end);
+}
+
+.ms-auto {
+  margin-inline-start: auto;
+}
+
+.me-auto {
+  margin-inline-end: auto;
+}
+
+.ps-2 {
+  padding-inline-start: 0.5rem;
+}
+
+.pe-2 {
+  padding-inline-end: 0.5rem;
+}
+
+.border-start {
+  border-inline-start: 1px solid var(--gray-200);
+}
+
+.border-end {
+  border-inline-end: 1px solid var(--gray-200);
+}
+
+/* Navigation and layout helpers */
+.nav-item {
+  margin-inline-end: 1rem;
+}
+
+.nav-item:last-child {
+  margin-inline-end: 0;
+}
+
+/* Float utilities that respect direction */
+.float-start {
+  float: inline-start;
+}
+
+.float-end {
+  float: inline-end;
 }

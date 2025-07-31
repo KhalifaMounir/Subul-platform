@@ -1,4 +1,3 @@
-import { ViewType } from '@/utils/types';
 import styles from '@/styles/Modal.module.css';
 
 interface ResultsModalProps {
@@ -9,6 +8,7 @@ interface ResultsModalProps {
   courseId: string | string[];
   showView: (view: ViewType | string) => void;
 }
+type ViewType = 'dashboard' | 'quiz' | 'results';
 
 export default function ResultsModal({ onClose, onRetake, onGetCertificate, score, courseId, showView }: ResultsModalProps) {
   return (

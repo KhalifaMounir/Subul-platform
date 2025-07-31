@@ -3,6 +3,7 @@ import axios from 'axios';
 import styles from '@/styles/Course.module.css';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ar';
+import { useTranslation } from 'next-i18next';
 
 dayjs.locale('ar');
 
@@ -15,7 +16,6 @@ const translateText = async (text) => {
     });
     return res.data.translated || text;
   } catch (error) {
-    console.error('Erreur de traduction:', error);
     return text; // fallback si erreur
   }
 };
@@ -28,6 +28,7 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
   const [translating, setTranslating] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const { t } = useTranslation('common');
 
   const jobsPerPage = 8;
 
@@ -46,7 +47,6 @@ export default function Jobs() {
           setMessage(res.data.message);
         }
       } catch (error) {
-        console.error('Error fetching recommended jobs:', error);
       } finally {
         setLoading(false);
       }
@@ -97,13 +97,13 @@ export default function Jobs() {
     <div className={`${styles.view} ${styles.active}`}>
       <div className={styles.courseContainer}>
         <div className={styles.courseSidebar} style={{ padding: '1rem', textAlign: 'center' }}>
-          <h3>فرص العمل</h3>
-          <p>اكتشف فرص العمل المناسبة لك وابدأ مسيرتك المهنية الآن!</p>
-          <p>نحن نعمل على جلب أفضل الفرص لك باستمرار.</p>
+          <h3>{t('job_opportunities')}</h3>
+          <p>{t('discover_jobs')}</p>
+          <p>{t('bringing_best_jobs')}</p>
         </div>
 
         <div className={styles.courseContent}>
-          <h2 style={{ marginBottom: '1rem' }}>الوظائف المتاحة لك</h2>
+          <h2 style={{ marginBottom: '1rem' }}>{t('available_jobs')}</h2>
 
           {loading || translating ? (
             <div
@@ -127,10 +127,10 @@ export default function Jobs() {
                 }}
               ></i>
               <p style={{ fontSize: '1.2rem', maxWidth: '500px', lineHeight: '1.8' }}>
-                نُقدّم لك فرص عمل مصممة خصيصًا وفقًا لمهاراتك، اعتمادًا على تحليل ذكي باستخدام الذكاء الاصطناعي.
+                {t('ai_job_message')}
               </p>
               <p style={{ fontSize: '1.2rem', maxWidth: '500px', lineHeight: '1.8' }}>
-                يرجى الانتظار قليلًا...
+                {t('please_wait')}
               </p>
 
               <style jsx>{`
@@ -182,14 +182,14 @@ export default function Jobs() {
                         }}
                       >
                         <li>
-                          <i className="fas fa-building" style={{ marginLeft: 6 }}></i> الشركة: {job.company}
+                          <i className="fas fa-building" style={{ marginLeft: 6 }}></i> {t('company')}: {job.company}
                         </li>
                         <li>
-                          <i className="fas fa-map-marker-alt" style={{ marginLeft: 6 }}></i> الموقع: {job.location}
+                          <i className="fas fa-map-marker-alt" style={{ marginLeft: 6 }}></i> {t('location')}: {job.location}
                         </li>
                         <li>
                           <i className="fas fa-calendar-alt" style={{ marginLeft: 6 }}></i>
-                          تاريخ النشر: {dayjs(job.date_posted).format('D MMMM YYYY')}
+                          {t('date_posted')}: {dayjs(job.date_posted).format('D MMMM YYYY')}
                         </li>
                       </ul>
                       <a
@@ -211,21 +211,21 @@ export default function Jobs() {
                         }}
                       >
                         <i className="fas fa-paper-plane" style={{ marginLeft: 8 }}></i>
-                        قدم الآن
+                        {t('apply_now')}
                       </a>
                     </div>
                   ))}
                 </div>
               ) : (
                 <p style={{ fontSize: '1.2rem', color: '#666', marginTop: '2rem' }}>
-                  {message || 'لا توجد وظائف مطابقة حالياً.'}
+                  {message || t('no_matching_jobs')}
                 </p>
               )}
 
               {filteredJobs.length > jobsPerPage && (
                 <div style={{ marginTop: '2rem', textAlign: 'center' }}>
                   <button onClick={prevPage} disabled={currentPage === 1} style={{ marginRight: '1rem' }}>
-                    السابق
+                    {t('previous')}
                   </button>
 
                   {[...Array(totalPages)].map((_, i) => (
@@ -244,7 +244,7 @@ export default function Jobs() {
                   ))}
 
                   <button onClick={nextPage} disabled={currentPage === totalPages} style={{ marginLeft: '1rem' }}>
-                    التالي
+                    {t('next')}
                   </button>
                 </div>
               )}

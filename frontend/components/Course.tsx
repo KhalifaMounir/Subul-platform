@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 import QuizModal from "@/components/QuizModal"; 
 import styles from "@/styles/Course.module.css";
-import Header from "@/components/HomeHeader";
 
 interface Subpart {
   id: number;
@@ -32,11 +31,10 @@ interface CourseProps {
 
 export default function Course({ certId }: CourseProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const certIdFromParams = searchParams.get("cert_id") || certId;
-  const lessonIdFromParams = searchParams.get("lesson_id");
-  const subpartIdFromParams = searchParams.get("subpart_id");
-  const timestampParam = searchParams.get("timestamp"); 
+  const certIdFromParams = router.query.cert_id as string || certId;
+  const lessonIdFromParams = router.query.lesson_id as string;
+  const subpartIdFromParams = router.query.subpart_id as string;
+  const timestampParam = router.query.timestamp as string; 
 
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [currentSubpart, setCurrentSubpart] = useState<Subpart & { lessonId: number; lessonTitle: string } | null>(null);
@@ -49,17 +47,27 @@ export default function Course({ certId }: CourseProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [videoStartTime, setVideoStartTime] = useState<number | null>(null);
+  const isRTL = router.locale === 'ar';
 
   useEffect(() => {
+    console.log('Course component - certIdFromParams:', certIdFromParams);
+    console.log('Course component - router.query:', router.query);
+    console.log('Course component - router.asPath:', router.asPath);
+    console.log('Course component - router.pathname:', router.pathname);
+    
     if (!certIdFromParams) {
+      console.log('No certIdFromParams found');
       setError("معرف الدورة غير متوفر");
       setIsLoading(false);
       router.push("/dashboard");
       return;
     }
+    
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        console.log('Fetching lessons for certId:', certIdFromParams);
+        
         const [lessonsResponse, labResponse] = await Promise.all([
           fetch(`http://localhost:5000/certifications/${certIdFromParams}/lessons`, {
             method: "GET",
@@ -70,16 +78,26 @@ export default function Course({ certId }: CourseProps) {
             credentials: "include",
           }),
         ]);
+        
+        console.log('Lessons response status:', lessonsResponse.status);
+        console.log('Lab response status:', labResponse.status);
+        
         if (!lessonsResponse.ok) {
+          console.log('Lessons response not ok:', lessonsResponse.status, lessonsResponse.statusText);
           if (lessonsResponse.status === 401 || lessonsResponse.status === 403) {
             router.push("/");
             return;
           }
-          throw new Error("فشل جلب الدروس");
+          const errorText = await lessonsResponse.text();
+          console.log('Error response:', errorText);
+          throw new Error(`فشل جلب الدروس: ${lessonsResponse.status} ${lessonsResponse.statusText}`);
         }
+        
         const lessonsData = await lessonsResponse.json();
+        console.log('Lessons data received:', lessonsData);
         setLessons(lessonsData);
         setError(null);
+        
         if (labResponse.ok) {
           const labData = await labResponse.json();
           setLabGuide(labData);
@@ -87,13 +105,14 @@ export default function Course({ certId }: CourseProps) {
           setLabGuide(null);
         }
       } catch (err: any) {
+        console.error('Error in fetchData:', err);
         setError(`تعذر تحميل الدروس: ${err.message}`);
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
-  }, [certIdFromParams, router]);
+  }, [certIdFromParams, router, router.query]);
 
   useEffect(() => {
     if (subpartIdFromParams) {
@@ -277,7 +296,7 @@ export default function Course({ certId }: CourseProps) {
     <>
       <div className={`${styles.view} ${styles.active}`}>
         <div className={styles.courseContainer}>
-          <div className={styles.courseSidebar}>
+          <div className={styles.courseSidebar} dir={isRTL ? 'rtl' : 'ltr'}>
             <button className={styles.backBtn} onClick={() => router.push("/dashboard")}>
               <i className="fas fa-arrow-right"></i> العودة للدورات
             </button>
@@ -337,7 +356,7 @@ export default function Course({ certId }: CourseProps) {
               ))}
             </div>
           </div>
-          <div className={styles.courseContent}>
+          <div className={styles.courseContent} dir={isRTL ? 'rtl' : 'ltr'}>
             <div className={styles.videoPlayer}>
               {currentSubpart && currentSubpart.videoUrl ? (
                 videoError ? (

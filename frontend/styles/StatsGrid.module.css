@@ -31,21 +31,3 @@
   margin-right: 0.8rem;
 }
 
-.statText {
-  display: flex;
-  flex-direction: column;
-}
-
-.statText h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 0.2rem;
-}
-
-.statText p {
-  font-size: 0.95rem;
-  color: #666;
-  font-weight: 500;
-}
-

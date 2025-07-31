@@ -5,12 +5,14 @@
 
 .courseContainer {
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: 1fr 350px;
+  grid-template-areas: "content sidebar";
   gap: 1rem;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
   height: calc(100vh - 100px);
+  direction: ltr;
 }
 
 .courseSidebar {
@@ -21,6 +23,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  grid-area: sidebar;
 }
 
 .backBtn {
@@ -196,6 +199,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  grid-area: content;
 }
 
 .videoPlayer {

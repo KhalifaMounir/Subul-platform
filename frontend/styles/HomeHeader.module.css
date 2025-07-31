@@ -31,15 +31,10 @@
   cursor: pointer;
   transition: opacity 0.2s;
 }
+
 .logo i {
   font-size: 2rem;
   color: #a78bfa; /* light purple */
-}
-
-.logoIcon {
-  width: 2rem;
-  height: 2rem;
-  color: #2563eb;
 }
 
 .logoText {
@@ -66,21 +61,6 @@
   font-size: 0.875rem;
 }
 
-.navButtonDefault {
-  color: #4b5563;
-  background: transparent;
-}
-
-.navButtonDefault:hover {
-  color: #2563eb;
-  background: #eff6ff;
-}
-
-.navButtonActive {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
 .loginButton {
   background: #2563eb;
   color: white;
@@ -88,15 +68,6 @@
 
 .loginButton:hover {
   background: #1d4ed8;
-}
-
-.logoutButton {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.logoutButton:hover {
-  background: #fecaca;
 }
 
 .navIcon {

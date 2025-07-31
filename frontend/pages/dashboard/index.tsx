@@ -1,5 +1,12 @@
-import Dashboard from '@/components/dashboard'
+import Dashboard from '@/components/dashboard';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
-export default function HomePage() {
-  return <Dashboard />
+export default Dashboard;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common'])),
+    },
+  };
 }

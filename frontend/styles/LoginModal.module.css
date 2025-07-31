@@ -111,11 +111,15 @@
   background: var(--white);
 }
 
+.form {
+  width: 100%;
+}
+
 .formGroup {
   margin-bottom: 0.75rem;
 }
 
-.formGroup label {
+.label {
   display: block;
   font-size: 0.75rem;
   font-weight: 500;
@@ -127,7 +131,7 @@
   position: relative;
 }
 
-.inputWrapper i {
+.inputIcon {
   position: absolute;
   right: 0.75rem;
   top: 50%;
@@ -135,7 +139,7 @@
   color: var(--gray-400);
 }
 
-.formGroup input {
+.input {
   width: 100%;
   padding: 0.5rem 2rem 0.5rem 0.75rem;
   border: 2px solid var(--gray-200);
@@ -145,10 +149,17 @@
   background: var(--gray-50);
 }
 
-.formGroup input:focus {
+.input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.error {
+  color: red;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
 }
 
 .loginBtn {
@@ -170,17 +181,6 @@
 .loginBtn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.demoCredentials {
-  text-align: center;
-  margin-top: 0.75rem;
-  font-size: 0.75rem;
-  color: var(--gray-600);
-}
-
-.demoCredentials p {
-  margin-bottom: 0.125rem;
 }
 
 @media (max-width: 480px) {

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { X, Mail, Lock } from 'lucide-react';
 import styles from '@/styles/LoginModal.module.css';
+import { useTranslation } from 'next-i18next';
 
 interface LoginModalProps {
   setIsLoggedIn: (value: boolean) => void;
@@ -16,6 +17,8 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { t } = useTranslation('common');
+  const isRTL = router.locale === 'ar';
 
   // ✅ Handle form submission
   const handleSubmit = async (e: FormEvent) => {
@@ -34,28 +37,22 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Login successful:', data);
-
-        // ✅ Store session data
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('isAdmin', String(data.is_admin));
 
         setIsLoggedIn(true);
         onClose();
 
-        // ✅ Redirect based on admin status
         if (data.is_admin) {
           router.push('/admin/certifications');
         } else {
           router.push('/profile');
         }
-
       } else {
-        setError(data.message || 'Invalid username or password');
+        setError(data.message || t('login_error'));
       }
     } catch (err) {
-      console.error('Login error:', err);
-      setError('An error occurred during login. Please try again.');
+      setError(t('login_error'));
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +68,7 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
             <button
               onClick={onClose}
               className={styles.closeBtn}
-              aria-label="Close"
+              aria-label={t('cancel')}
             >
               <X size={20} />
             </button>
@@ -86,16 +83,15 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
                 />
               </svg>
             </div>
-            <h2 className={styles.loginHeader}>مرحباً بك في سبل</h2>
-            <p>تسجيل الدخول لبدء رحلة التعلم</p>
+            <h2 className={styles.loginHeader}>{t('login_welcome')}</h2>
+            <p>{t('login_to_start')}</p>
           </div>
 
           <div className={styles.loginBody}>
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label htmlFor="username" className={styles.label}>
-                  اسم المستخدم
-                  <Mail size={16} className={styles.inputIcon} />
+                  {t('username')}
                 </label>
                 <div className={styles.inputWrapper}>
                   <input
@@ -104,7 +100,7 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    placeholder="أدخل اسم المستخدم"
+                    placeholder={t('enter_username')}
                     className={styles.input}
                   />
                 </div>
@@ -112,8 +108,7 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
 
               <div className={styles.formGroup}>
                 <label htmlFor="password" className={styles.label}>
-                  كلمة المرور
-                  <Lock size={16} className={styles.inputIcon} />
+                  {t('password')}
                 </label>
                 <div className={styles.inputWrapper}>
                   <input
@@ -122,7 +117,7 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="أدخل كلمة المرور"
+                    placeholder={t('enter_password')}
                     className={styles.input}
                   />
                 </div>
@@ -131,7 +126,7 @@ export default function LoginModal({ setIsLoggedIn, onClose }: LoginModalProps) 
               {error && <p className={styles.error}>{error}</p>}
 
               <button type="submit" disabled={isLoading} className={styles.loginBtn}>
-                {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+                {isLoading ? t('login_loading') : t('login_btn')}
               </button>
             </form>
           </div>

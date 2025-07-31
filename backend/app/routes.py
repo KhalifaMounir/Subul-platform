@@ -7,7 +7,7 @@ from app.models import User
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 from flask_login import current_user
-from app.models import  User, Certification, Quiz, LabGuide, Video
+from app.models import  User, Certification, Quiz, LabGuide, Video, user_certifications
 from werkzeug.utils import secure_filename
 import os
 from flask_login import logout_user
@@ -50,6 +50,28 @@ def logout():
 @login_required
 def dashboard():
     return jsonify({'message': 'Welcome to your dashboard'}), 200
+
+@bp.route('/api/my-certifications', methods=['GET'])
+@login_required
+def get_my_certifications():
+    user_id = current_user.id
+
+    # Query the association table directly
+    results = db.session.execute(
+        user_certifications.select().where(user_certifications.c.user_id == user_id)
+    ).fetchall()
+
+    # Prepare the response
+    certs = [
+        {
+            'user_id': row.user_id,
+            'certification_id': row.certification_id
+        }
+        for row in results
+    ]
+
+    return jsonify({'certifications': certs})
+
 
 @bp.route('/certifications', methods=['GET'])
 @login_required

@@ -4,14 +4,18 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Header from '@/components/Header';
 import { useState, useEffect } from 'react';
+import { appWithTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next';
 
-export default function App({ Component, pageProps }: AppProps) {
+function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'profile'>('home');
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const { t } = useTranslation('common');
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const loggedIn = typeof window !== 'undefined' ? localStorage.getItem('isLoggedIn') === 'true' : false;
     setIsLoggedIn(loggedIn);
 
     const verifySession = async () => {
@@ -30,10 +34,34 @@ export default function App({ Component, pageProps }: AppProps) {
         }
       } catch (error) {
         console.error('Session verification failed:', error);
+      } finally {
+        setIsAuthChecking(false);
       }
     };
-    if (loggedIn) verifySession();
+    if (loggedIn) {
+      verifySession();
+    } else {
+      setIsAuthChecking(false);
+    }
   }, [router.pathname]);
+
+  // Check if user is trying to access protected routes without being logged in
+  useEffect(() => {
+    const loggedIn = typeof window !== 'undefined' ? localStorage.getItem('isLoggedIn') === 'true' : false;
+    const protectedRoutes = ['/dashboard', '/profile', '/jobs', '/course'];
+    const isProtectedRoute = protectedRoutes.some(route => router.pathname.startsWith(route));
+    
+    if (!loggedIn && isProtectedRoute && router.pathname !== '/') {
+      router.push('/');
+    }
+  }, [router.pathname, router]);
+
+  useEffect(() => {
+    const dir = router.locale === 'ar' ? 'rtl' : 'ltr';
+    if (typeof window !== 'undefined') {
+      document.documentElement.setAttribute('dir', dir);
+    }
+  }, [router.locale]);
 
   const handleLogin = () => {
     router.push('/');
@@ -52,6 +80,41 @@ export default function App({ Component, pageProps }: AppProps) {
   const isHomePage = router.pathname === '/';
   const isCoursePage = router.pathname.startsWith('/course');
   const showHeader = !isAdminRoute && !isHomePage ;
+
+  // Check if user is not logged in and trying to access protected routes
+  const loggedIn = typeof window !== 'undefined' ? localStorage.getItem('isLoggedIn') === 'true' : false;
+  const protectedRoutes = ['/dashboard', '/profile', '/jobs', '/course'];
+  const isProtectedRoute = protectedRoutes.some(route => router.pathname.startsWith(route));
+  
+  // If not logged in and trying to access protected route, show loading and redirect
+  if (!loggedIn && isProtectedRoute && router.pathname !== '/') {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.2rem'
+      }}>
+        Checking session...
+      </div>
+    );
+  }
+
+  // Don't render anything while checking authentication (except on home page)
+  if (isAuthChecking && router.pathname !== '/') {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.2rem'
+      }}>
+        Checking session...
+      </div>
+    );
+  }
 
   return (
     <>
@@ -75,3 +138,6 @@ export default function App({ Component, pageProps }: AppProps) {
     </>
   );
 }
+
+// This is the crucial part - wrap your App with appWithTranslation
+export default appWithTranslation(App);
