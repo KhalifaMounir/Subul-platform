@@ -1,8 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-        "./jobsearchsubul/tools"
-    ],
-    "cursorpyright.analysis.extraPaths": [
-        "./jobsearchsubul/tools"
-    ]
-}
